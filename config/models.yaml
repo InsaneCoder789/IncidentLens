@@ -1,0 +1,20 @@
+models:
+  reasoning:
+    primary: mock-llm
+    fallback: mock-llm
+  embeddings:
+    primary: sentence-transformers/all-MiniLM-L6-v2
+  reranker:
+    enabled: false
+    primary: cross-encoder/ms-marco-MiniLM-L-6-v2
+generation:
+  temperature: 0.2
+  max_tokens: 2000
+retrieval:
+  top_k: 8
+  score_threshold: 0.25
+llmops:
+  tracing_enabled: true
+  cost_tracking_enabled: true
+  prompt_versioning_enabled: true
+

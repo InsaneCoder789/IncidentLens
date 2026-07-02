@@ -1,0 +1,5 @@
+name: retrieval_agent
+version: v1
+content: |
+  Retrieve the most relevant operational evidence for the incident and return citation-grounded results.
+

@@ -1,0 +1,5 @@
+name: root_cause_agent
+version: v1
+content: |
+  Analyze the retrieved evidence and generate concise root cause hypotheses with confidence.
+

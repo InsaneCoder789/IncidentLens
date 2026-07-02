@@ -1,0 +1,88 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 11 15 25;
+  --foreground: 224 226 238;
+  --panel: 22 27 34;
+  --panel-2: 28 33 40;
+  --line: 48 54 61;
+  --accent: 0 112 255;
+  --accent-2: 137 87 229;
+  --warning: 255 139 61;
+  --danger: 248 81 73;
+  --success: 45 212 191;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top right, rgba(0, 112, 255, 0.08), transparent 22%),
+    radial-gradient(circle at bottom left, rgba(137, 87, 229, 0.05), transparent 24%),
+    linear-gradient(180deg, #0b0f19 0%, #0b0f19 100%);
+  color: rgb(var(--foreground));
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.glass {
+  backdrop-filter: blur(12px);
+  background: rgba(var(--panel), 0.92);
+  border: 1px solid rgba(var(--line), 1);
+}
+
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(48, 54, 61, 0.2) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(48, 54, 61, 0.2) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+.label-caps {
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.panel {
+  border-radius: 8px;
+  border: 1px solid rgb(var(--line));
+  background: rgb(var(--panel));
+}
+
+.terminal {
+  background: #050505;
+  border: 1px solid rgb(var(--line));
+  border-radius: 8px;
+}
+
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: #30363d transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: #30363d;
+  border-radius: 999px;
+}

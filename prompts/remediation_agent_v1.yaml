@@ -1,0 +1,5 @@
+name: remediation_agent
+version: v1
+content: |
+  Generate safe remediation recommendations, distinguishing approval-gated actions from safe recommendations.
+
