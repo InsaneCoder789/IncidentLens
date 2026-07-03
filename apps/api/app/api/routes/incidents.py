@@ -2,9 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
-from app.schemas.evidence import EvidenceItemCreate
+from app.schemas.evidence import EvidenceChunkRead, EvidenceItemCreate, EvidenceItemRead, ProcessAllEvidenceResponse
 from app.schemas.incident import IncidentCreate, IncidentRead, IncidentUpdate
-from app.services.evidence_service import list_evidence, create_evidence
+from app.services.evidence_processing_service import process_all_evidence_for_incident
+from app.services.evidence_service import list_evidence, create_evidence, list_incident_chunks
 from app.services.incident_service import (
     create_incident,
     delete_incident,
@@ -57,26 +58,12 @@ def remove_incident(incident_id: int, db: Session = Depends(get_db)) -> None:
     delete_incident(db, incident)
 
 
-@router.get("/{incident_id}/evidence")
-def read_incident_evidence(incident_id: int, db: Session = Depends(get_db)) -> list[dict]:
+@router.get("/{incident_id}/evidence", response_model=list[EvidenceItemRead])
+def read_incident_evidence(incident_id: int, db: Session = Depends(get_db)) -> list[EvidenceItemRead]:
     incident = get_incident(db, incident_id)
     if not incident:
         raise HTTPException(status_code=404, detail="Incident not found")
-    return [
-        {
-            "id": item.id,
-            "incident_id": item.incident_id,
-            "source_type": item.source_type,
-            "title": item.title,
-            "raw_content": item.raw_content,
-            "normalized_content": item.normalized_content,
-            "metadata_json": item.metadata_json,
-            "created_at": item.created_at,
-            "embedding_status": item.embedding_status,
-            "processing_status": item.processing_status,
-        }
-        for item in list_evidence(db, incident_id)
-    ]
+    return [EvidenceItemRead.model_validate(item) for item in list_evidence(db, incident_id)]
 
 
 @router.post("/{incident_id}/evidence", status_code=status.HTTP_201_CREATED)
@@ -97,3 +84,20 @@ def create_incident_evidence(incident_id: int, payload: EvidenceItemCreate, db: 
         "embedding_status": evidence.embedding_status,
         "processing_status": evidence.processing_status,
     }
+
+
+@router.post("/{incident_id}/evidence/process-all", response_model=ProcessAllEvidenceResponse)
+def process_all_incident_evidence(incident_id: int, db: Session = Depends(get_db)) -> ProcessAllEvidenceResponse:
+    incident = get_incident(db, incident_id)
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incident not found")
+    result = process_all_evidence_for_incident(db, incident_id)
+    return ProcessAllEvidenceResponse(**result.__dict__)
+
+
+@router.get("/{incident_id}/chunks", response_model=list[EvidenceChunkRead])
+def read_incident_chunks(incident_id: int, db: Session = Depends(get_db)) -> list[EvidenceChunkRead]:
+    incident = get_incident(db, incident_id)
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incident not found")
+    return [EvidenceChunkRead.model_validate(chunk) for chunk in list_incident_chunks(db, incident_id)]

@@ -40,6 +40,32 @@ export type EvidenceItem = {
   processing_status: string;
 };
 
+export type EvidenceChunk = {
+  id: number;
+  evidence_item_id: number;
+  incident_id: number;
+  chunk_index: number;
+  citation_id: string;
+  content: string;
+  token_count: number;
+  metadata_json: Record<string, unknown>;
+  created_at: string;
+};
+
+export type EvidenceProcessResponse = {
+  evidence_id: number;
+  status: string;
+  chunks_created: number;
+  embedding_status: string;
+};
+
+export type ProcessAllEvidenceResponse = {
+  incident_id: number;
+  processed: number;
+  failed: number;
+  chunks_created: number;
+};
+
 export type MetricStat = {
   label: string;
   value: string;
@@ -73,11 +99,25 @@ export type ActionPlan = {
 };
 
 export type RetrievalResult = {
-  citationId: string;
-  sourceType: string;
+  citation_id: string;
+  source_type: string;
   title: string;
-  excerpt: string;
-  relevanceScore: number;
+  content: string;
+  relevance_score: number;
+  metadata: Record<string, unknown>;
+};
+
+export type RetrievalSearchRequest = {
+  incident_id: number;
+  query: string;
+  source_types?: string[];
+  top_k?: number;
+  score_threshold?: number;
+};
+
+export type RetrievalSearchResponse = {
+  query: string;
+  results: RetrievalResult[];
 };
 
 export type TraceNode = {
@@ -95,6 +135,19 @@ export type ToolCall = {
   name: string;
   status: "success" | "queued" | "warning";
   latency: string;
+};
+
+export type EvidenceSourceSummary = {
+  name: string;
+  subtitle: string;
+  count: string;
+  status: string;
+};
+
+export type ConnectionHealth = {
+  name: string;
+  subtitle: string;
+  status: string;
 };
 
 export type EvalMetric = {

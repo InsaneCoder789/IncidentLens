@@ -11,9 +11,10 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./incidentlens.db"
     redis_url: str = "redis://localhost:6379/0"
     mock_mode: bool = True
+    embedding_model_name: str = "sentence-transformers/all-MiniLM-L6-v2"
+    embedding_dimension: int = 384
 
 
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
-

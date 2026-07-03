@@ -34,3 +34,17 @@ class EvidenceChunkRead(BaseModel):
     token_count: int
     metadata_json: dict
     created_at: datetime
+
+
+class EvidenceProcessResponse(BaseModel):
+    evidence_id: int
+    status: str
+    chunks_created: int
+    embedding_status: str
+
+
+class ProcessAllEvidenceResponse(BaseModel):
+    incident_id: int
+    processed: int
+    failed: int
+    chunks_created: int

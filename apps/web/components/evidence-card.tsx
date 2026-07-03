@@ -1,4 +1,5 @@
 import type { EvidenceItem } from "@/lib/types";
+import { ProcessEvidenceButton } from "@/components/evidence-citation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -18,6 +19,7 @@ export function EvidenceCard({ evidence }: { evidence: EvidenceItem }) {
           <span>{evidence.processing_status}</span>
           <span>{evidence.embedding_status}</span>
         </div>
+        <ProcessEvidenceButton evidenceId={evidence.id} />
       </CardContent>
     </Card>
   );

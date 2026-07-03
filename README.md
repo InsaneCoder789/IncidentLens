@@ -25,15 +25,13 @@ Production incident response is noisy, high-stakes, and evidence-heavy. Incident
 - Backend: FastAPI, SQLAlchemy, PostgreSQL, pgvector, Redis-ready config
 - DevEx: Docker Compose, pnpm workspaces, Makefile
 
-## Phase 1 Features
+## Phase 2 Features
 
-- incident dashboard
-- incident list
-- incident detail workspace
-- incident CRUD API
-- evidence CRUD API
-- health endpoint
-- demo seed data for a payment incident
+- dashboard, incident list, incident detail workspace, evidence workspace, trace viewer, eval dashboard, and LLMOps settings screens rebuilt from the Stitch UI prototype
+- evidence processing pipeline with normalization, chunking, embeddings, chunk storage, and incident-wide citation numbering
+- semantic retrieval search with vector-first matching and keyword fallback
+- incident and evidence APIs ready for the FastAPI backend contracts
+- realistic seeded payment incident data for retrieval and investigation flows
 
 ## Architecture
 
@@ -43,6 +41,18 @@ flowchart LR
   API --> DB[(PostgreSQL + pgvector)]
   API --> REDIS[(Redis)]
   API --> SEED[Demo Seed Script]
+```
+
+## RAG Pipeline
+
+```mermaid
+flowchart LR
+  EVID[Evidence Item] --> NORM[Normalize Content]
+  NORM --> CHUNK[Chunk Evidence]
+  CHUNK --> EMBED[Generate Embeddings]
+  EMBED --> STORE[Store Evidence Chunks]
+  STORE --> SEARCH[Semantic Retrieval Search]
+  SEARCH --> CITE[Citation-Grounded Incident UI]
 ```
 
 ## Local Setup
@@ -78,7 +88,7 @@ pnpm dev
 
 ```bash
 cd apps/api
-python -m app.seed.demo
+python3 -m app.seed.demo
 ```
 
 ## Environment Variables
@@ -109,6 +119,10 @@ The seeded incident is:
 - `DELETE /api/incidents/{incident_id}`
 - `GET /api/incidents/{incident_id}/evidence`
 - `POST /api/incidents/{incident_id}/evidence`
+- `POST /api/incidents/{incident_id}/evidence/process-all`
+- `GET /api/incidents/{incident_id}/chunks`
+- `POST /api/evidence/{evidence_id}/process`
+- `POST /api/retrieval/search`
 - `DELETE /api/evidence/{evidence_id}`
 
 ## Frontend Screenshots

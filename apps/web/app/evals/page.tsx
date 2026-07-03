@@ -5,11 +5,11 @@ import { Button } from "@/components/ui/button";
 
 export default function EvalsPage() {
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <div className="text-xl font-semibold text-white">Evaluation Dashboard</div>
-          <div className="mt-1 text-xs text-slate-500">Retrieval, reasoning, faithfulness, and cost guardrail metrics.</div>
+          <div className="mt-1 text-xs text-slate-500">Metric cards, regression charts, failure cases, and prompt version comparison from the Stitch eval screen.</div>
         </div>
         <div className="flex gap-2">
           <Button size="sm" className="bg-[#7b3ff3] hover:bg-[#6d31e5]">Run Eval Suite</Button>
@@ -17,16 +17,16 @@ export default function EvalsPage() {
         </div>
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-5">
+      <div className="grid gap-4 lg:grid-cols-5">
         {evalMetrics.map((metric) => (
           <EvalMetricCard key={metric.label} {...metric} />
         ))}
       </div>
 
-      <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
         <EvalHistoryChart {...evalTrend} />
         <Card>
-          <CardHeader><div className="text-sm font-medium text-white">A/B Evaluation</div></CardHeader>
+          <CardHeader><div className="text-sm font-medium text-white">Regression Status</div></CardHeader>
           <CardContent className="space-y-3 text-xs text-slate-300">
             <div className="rounded-md border border-line bg-[#11161f] px-3 py-3">
               <div className="flex justify-between"><span>Prompt v4.2 (current)</span><span>94.2 pts</span></div>

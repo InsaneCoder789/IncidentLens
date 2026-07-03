@@ -8,4 +8,4 @@ python-multipart>=0.0.9
 redis>=5.0.0
 alembic>=1.13.0
 pgvector>=0.3.0
-
+sentence-transformers>=3.0.0
