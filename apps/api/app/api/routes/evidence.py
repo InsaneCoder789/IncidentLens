@@ -24,4 +24,9 @@ def process_evidence(evidence_id: int, db: Session = Depends(get_db)) -> Evidenc
     if not evidence:
         raise HTTPException(status_code=404, detail="Evidence not found")
     result = process_evidence_item(db, evidence)
-    return EvidenceProcessResponse(**result.__dict__)
+    return EvidenceProcessResponse(
+        evidence_id=result.evidence_id,
+        status=result.status,
+        chunks_created=result.chunks_created,
+        embedding_status=result.embedding_status,
+    )

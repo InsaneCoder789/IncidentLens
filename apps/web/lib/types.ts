@@ -111,6 +111,7 @@ export type RetrievalSearchRequest = {
   incident_id: number;
   query: string;
   source_types?: string[];
+  metadata_filters?: Record<string, string | number | boolean>;
   top_k?: number;
   score_threshold?: number;
 };

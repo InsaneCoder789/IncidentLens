@@ -45,15 +45,39 @@ flowchart LR
 
 ## RAG Pipeline
 
+IncidentLens AI uses a retrieval augmented generation foundation to ground incident investigation in real operational evidence.
+The pipeline:
+1. Evidence normalization
+2. Chunking with metadata preservation
+3. HuggingFace embedding generation
+4. pgvector vector storage
+5. Hybrid retrieval
+6. Keyword fallback
+7. Citation-grounded evidence results
+
 ```mermaid
-flowchart LR
-  EVID[Evidence Item] --> NORM[Normalize Content]
-  NORM --> CHUNK[Chunk Evidence]
-  CHUNK --> EMBED[Generate Embeddings]
-  EMBED --> STORE[Store Evidence Chunks]
-  STORE --> SEARCH[Semantic Retrieval Search]
-  SEARCH --> CITE[Citation-Grounded Incident UI]
+flowchart TD
+    A[Evidence Item] --> B[Normalize Content]
+    B --> C[Chunk Evidence]
+    C --> D[Generate Embeddings]
+    D --> E[Store in pgvector]
+    E --> F[Semantic Retrieval]
+    B --> G[Keyword Index / Fallback]
+    G --> H[Hybrid Results]
+    F --> H
+    H --> I[Citation Grounded Evidence Results]
 ```
+
+### Phase 2 Retrieval Details
+
+- Embedding model: `sentence-transformers/all-MiniLM-L6-v2`
+- Fallback mode: deterministic 384-dimension embeddings are generated automatically if the HuggingFace model cannot load locally
+- Citation format: `EVID-001`, `EVID-002`, `EVID-003`
+- Processing endpoints:
+  - `POST /api/evidence/{evidence_id}/process`
+  - `POST /api/incidents/{incident_id}/evidence/process-all`
+- Retrieval endpoint:
+  - `POST /api/retrieval/search`
 
 ## Local Setup
 
@@ -72,7 +96,7 @@ docker compose up --build
 
 ```bash
 cd apps/api
-python -m pip install -r requirements.txt
+python3 -m pip install -r requirements.txt
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
@@ -87,8 +111,13 @@ pnpm dev
 ### Seed data
 
 ```bash
-cd apps/api
-python3 -m app.seed.demo
+make seed
+```
+
+### One-command local dev
+
+```bash
+make dev
 ```
 
 ## Environment Variables
@@ -124,6 +153,41 @@ The seeded incident is:
 - `POST /api/evidence/{evidence_id}/process`
 - `POST /api/retrieval/search`
 - `DELETE /api/evidence/{evidence_id}`
+
+## How To Test Retrieval Locally
+
+1. Install dependencies and seed the demo incident.
+
+```bash
+make setup
+make seed
+```
+
+2. Start the API and frontend.
+
+```bash
+make dev
+```
+
+3. Process all evidence for the seeded incident.
+
+```bash
+curl -X POST http://localhost:8000/api/incidents/1/evidence/process-all
+```
+
+4. Run a retrieval query.
+
+```bash
+curl -X POST http://localhost:8000/api/retrieval/search \
+  -H "Content-Type: application/json" \
+  -d '{
+    "incident_id": 1,
+    "query": "What caused the payment API failure?",
+    "top_k": 8
+  }'
+```
+
+Expected results should include evidence related to `PR #482`, `SignatureMismatchError`, `payments/webhook.py`, `v1.42.0`, `payment_webhook_strict_mode`, the Prometheus spike, and `INC-104`.
 
 ## Frontend Screenshots
 

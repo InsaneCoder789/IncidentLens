@@ -17,6 +17,48 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
+const SOURCE_TYPE_OPTIONS = [
+  "all",
+  "github_pr",
+  "sentry_issue",
+  "prometheus_metric",
+  "runbook",
+  "previous_incident",
+  "statuspage",
+];
+
+export function CitationBadge({ citationId }: { citationId: string }) {
+  return <div className="font-mono text-[10px] uppercase tracking-[0.1em] text-slate-500">{citationId}</div>;
+}
+
+export function SourceTypeBadge({ sourceType }: { sourceType: string }) {
+  return <Badge className="border-line bg-[#10131b] text-slate-300">{sourceType}</Badge>;
+}
+
+export function EmbeddingStatusBadge({ status }: { status: string }) {
+  const tone =
+    status === "completed"
+      ? "border-[#2ea043]/30 bg-[#2ea0431a] text-[#7ee787]"
+      : status === "processing"
+        ? "border-[#568dff]/30 bg-[#568dff1a] text-[#b0c6ff]"
+        : status === "failed"
+          ? "border-[#f85149]/30 bg-[#f851491a] text-[#ffb4ab]"
+          : "border-line bg-[#171b24] text-slate-300";
+  return <Badge className={tone}>{status}</Badge>;
+}
+
+export function ProcessingStatusBadge({ status }: { status: string }) {
+  const tone =
+    status === "embedded"
+      ? "border-[#2ea043]/30 bg-[#2ea0431a] text-[#7ee787]"
+      : status === "chunked" || status === "normalized"
+        ? "border-[#568dff]/30 bg-[#568dff1a] text-[#b0c6ff]"
+        : status === "failed"
+          ? "border-[#f85149]/30 bg-[#f851491a] text-[#ffb4ab]"
+          : "border-line bg-[#171b24] text-slate-300";
+  return <Badge className={tone}>{status}</Badge>;
+}
+
 export function EvidenceCitation({
   citationId,
   title,
@@ -33,12 +75,12 @@ export function EvidenceCitation({
   return (
     <div className="rounded-lg border border-line bg-panel px-3 py-3">
       <div className="flex items-center justify-between gap-3">
-        <div className="font-mono text-[10px] uppercase tracking-[0.1em] text-slate-500">{citationId}</div>
+        <CitationBadge citationId={citationId} />
         <div className="flex items-center gap-2">
           {typeof score === "number" ? (
             <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-[#7ee787]">{Math.round(score * 100)}%</span>
           ) : null}
-          <Badge className="border-line bg-[#10131b] text-slate-300">{sourceType}</Badge>
+          <SourceTypeBadge sourceType={sourceType} />
         </div>
       </div>
       <div className="mt-2 text-sm font-medium text-white">{title}</div>
@@ -104,6 +146,24 @@ export function ProcessEvidenceButton({ evidenceId }: { evidenceId: number }) {
   );
 }
 
+export function EvidenceProcessingStatus({
+  processingStatus,
+  embeddingStatus,
+  chunkCount,
+}: {
+  processingStatus: string;
+  embeddingStatus: string;
+  chunkCount: number;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <ProcessingStatusBadge status={processingStatus} />
+      <EmbeddingStatusBadge status={embeddingStatus} />
+      <Badge className="border-line bg-[#10131b] text-slate-300">{chunkCount} chunks</Badge>
+    </div>
+  );
+}
+
 export function ProcessAllEvidenceButton({ incidentId }: { incidentId: number }) {
   const [message, setMessage] = useState<string>("");
   const [isPending, startTransition] = useTransition();
@@ -135,7 +195,7 @@ export function RetrievalResults({ results }: { results: RetrievalResult[] }) {
   return (
     <div className="space-y-3">
       {results.map((result) => (
-        <EvidenceCitation
+        <RetrievalResultCard
           key={result.citation_id}
           citationId={result.citation_id}
           title={result.title}
@@ -148,14 +208,33 @@ export function RetrievalResults({ results }: { results: RetrievalResult[] }) {
   );
 }
 
+export function RetrievalResultCard({
+  citationId,
+  title,
+  sourceType,
+  excerpt,
+  score,
+}: {
+  citationId: string;
+  title: string;
+  sourceType: string;
+  excerpt: string;
+  score: number;
+}) {
+  return <EvidenceCitation citationId={citationId} title={title} sourceType={sourceType} excerpt={excerpt} score={score} />;
+}
+
 export function SemanticSearchPanel({
   incidentId,
   initialResults,
+  metadataFilters,
 }: {
   incidentId: number;
   initialResults: RetrievalResult[];
+  metadataFilters?: Record<string, string | number | boolean>;
 }) {
   const [query, setQuery] = useState("strict validation rollback");
+  const [sourceType, setSourceType] = useState("all");
   const [results, setResults] = useState(initialResults);
   const [isPending, startTransition] = useTransition();
 
@@ -176,11 +255,29 @@ export function SemanticSearchPanel({
             <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
             <Input value={query} onChange={(event) => setQuery(event.target.value)} className="pl-8" placeholder="Search evidence chunks..." />
           </div>
+          <select
+            className="h-9 rounded-md border border-line bg-[#10131b] px-3 text-xs text-slate-300"
+            value={sourceType}
+            onChange={(event) => setSourceType(event.target.value)}
+          >
+            {SOURCE_TYPE_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option === "all" ? "all sources" : option}
+              </option>
+            ))}
+          </select>
           <Button
             size="sm"
             onClick={() =>
               startTransition(async () => {
-                const response = await searchEvidence({ incident_id: incidentId, query, top_k: 6, score_threshold: 0.2 });
+                const response = await searchEvidence({
+                  incident_id: incidentId,
+                  query,
+                  source_types: sourceType === "all" ? undefined : [sourceType],
+                  metadata_filters: metadataFilters,
+                  top_k: 6,
+                  score_threshold: 0.2,
+                });
                 setResults(response.results);
               })
             }
@@ -190,6 +287,65 @@ export function SemanticSearchPanel({
         </div>
         <RetrievalResults results={results} />
       </div>
+    </div>
+  );
+}
+
+export function VectorIndexStatusCard({
+  provider = "pgvector",
+  status = "ready",
+  embeddingModel = "sentence-transformers/all-MiniLM-L6-v2",
+}: {
+  provider?: string;
+  status?: string;
+  embeddingModel?: string;
+}) {
+  return (
+    <div className="rounded-xl border border-line bg-panel px-4 py-4">
+      <div className="text-sm font-medium text-white">Vector Index Status</div>
+      <div className="mt-3 space-y-2 text-xs text-slate-300">
+        <div className="flex justify-between"><span className="text-slate-500">Provider</span><span>{provider}</span></div>
+        <div className="flex justify-between"><span className="text-slate-500">Status</span><span>{status}</span></div>
+        <div className="flex justify-between gap-4"><span className="text-slate-500">Embedding model</span><span className="text-right">{embeddingModel}</span></div>
+      </div>
+    </div>
+  );
+}
+
+export function ChunkPreviewCard({
+  citationId,
+  content,
+  tokenCount,
+}: {
+  citationId: string;
+  content: string;
+  tokenCount: number;
+}) {
+  return (
+    <div className="rounded-lg border border-line bg-[#050505] px-3 py-3">
+      <div className="flex items-center justify-between gap-3">
+        <CitationBadge citationId={citationId} />
+        <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-slate-500">{tokenCount} tok</span>
+      </div>
+      <div className="mt-2 font-mono text-[11px] leading-5 text-slate-300">{content}</div>
+    </div>
+  );
+}
+
+export function ChunkList({
+  chunks,
+}: {
+  chunks: Array<{ id: number; citation_id: string; content: string; token_count: number }>;
+}) {
+  if (chunks.length === 0) {
+    return <div className="rounded-lg border border-dashed border-line px-3 py-4 text-xs text-slate-500">No chunks processed yet.</div>;
+  }
+
+  return (
+    <div className="space-y-2">
+      {chunks.map((chunk) => (
+        <ChunkPreviewCard key={chunk.id} citationId={chunk.citation_id} content={chunk.content} tokenCount={chunk.token_count} />
+      ))}
     </div>
   );
 }

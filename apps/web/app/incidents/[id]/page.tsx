@@ -2,8 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, FileText, PlayCircle, ShieldAlert, Upload } from "lucide-react";
 import { ConfidenceGauge } from "@/components/confidence-gauge";
+import { EvidenceCard } from "@/components/evidence-card";
 import {
   ActionPlanCard,
+  ChunkList,
   EvidenceCitation,
   ProcessAllEvidenceButton,
   RetrievalStatusStrip,
@@ -90,13 +92,22 @@ export default async function IncidentDetailPage({ params }: { params: Promise<{
               </div>
               <div className="rounded-xl border border-line bg-[#10131b] px-4 py-4">
                 <div className="label-caps text-slate-500">Chunk Store</div>
-                <div className="mt-3 space-y-2 text-xs text-slate-300">
-                  {chunks.map((chunk) => (
-                    <div key={chunk.id} className="rounded-lg border border-line bg-[#050505] px-3 py-3 font-mono text-[11px] leading-5 text-slate-300">
-                      {chunk.citation_id} :: {chunk.content}
-                    </div>
-                  ))}
+                <div className="mt-3">
+                  <ChunkList chunks={chunks} />
                 </div>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="label-caps text-slate-500">Evidence Processing</div>
+              <div className="grid gap-3 md:grid-cols-2">
+                {evidence.map((item) => (
+                  <EvidenceCard
+                    key={item.id}
+                    evidence={item}
+                    chunkCount={chunks.filter((chunk) => chunk.evidence_item_id === item.id).length}
+                  />
+                ))}
               </div>
             </div>
 
@@ -119,7 +130,7 @@ export default async function IncidentDetailPage({ params }: { params: Promise<{
 
       <div className="space-y-4">
         <ConfidenceGauge value={incident.latest_confidence_score ?? 0.89} />
-        <SemanticSearchPanel incidentId={incident.id} initialResults={retrieval.results} />
+        <SemanticSearchPanel incidentId={incident.id} initialResults={retrieval.results} metadataFilters={{ service: incident.affected_service }} />
         <Card>
           <CardHeader>
             <div className="label-caps text-slate-500">Evidence Citations</div>

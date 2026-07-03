@@ -1,20 +1,24 @@
-import { EvidenceCard } from "@/components/evidence-card";
-import { EvidenceUploadPanel, ProcessAllEvidenceButton, RetrievalResults, SemanticSearchPanel } from "@/components/evidence-citation";
+import { ChunkList, RetrievalResults, SemanticSearchPanel, VectorIndexStatusCard } from "@/components/evidence-citation";
+import { EmbeddingStatusBadge, ProcessingStatusBadge, SourceTypeBadge } from "@/components/evidence-citation";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { getIncidentEvidence, searchEvidence } from "@/lib/api";
+import { getIncidentChunks, getIncidentEvidence, searchEvidence } from "@/lib/api";
 import { evidenceSources } from "@/lib/mock-data";
 
 export default async function EvidencePage() {
-  const evidence = await getIncidentEvidence(1);
-  const retrieval = await searchEvidence({ incident_id: 1, query: "strict validation webhook", top_k: 5, score_threshold: 0.2 });
+  const [evidence, chunks, retrieval] = await Promise.all([
+    getIncidentEvidence(1),
+    getIncidentChunks(1),
+    searchEvidence({ incident_id: 1, query: "What caused the payment API failure?", top_k: 8, score_threshold: 0.2 }),
+  ]);
+
+  const chunkCounts = new Map<number, number>();
+  for (const chunk of chunks) {
+    chunkCounts.set(chunk.evidence_item_id, (chunkCounts.get(chunk.evidence_item_id) ?? 0) + 1);
+  }
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-4 xl:grid-cols-[360px_minmax(0,1fr)]">
-        <div className="space-y-4">
-          <EvidenceUploadPanel />
-          <ProcessAllEvidenceButton incidentId={1} />
-        </div>
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {evidenceSources.map((source) => (
             <div key={source.name} className="rounded-xl border border-line bg-panel px-4 py-4">
@@ -31,34 +35,54 @@ export default async function EvidencePage() {
             </div>
           ))}
         </div>
+        <VectorIndexStatusCard />
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
         <Card>
           <CardHeader>
-            <div className="text-sm font-medium text-white">Evidence Workspace</div>
+            <div className="text-sm font-medium text-white">Evidence Table</div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              {evidence.map((item) => (
-                <EvidenceCard key={item.id} evidence={item} />
-              ))}
+            <div className="overflow-hidden rounded-xl border border-line">
+              <table className="w-full border-collapse text-left text-xs">
+                <thead className="bg-[#10131b] text-[10px] uppercase tracking-[0.08em] text-slate-500">
+                  <tr>
+                    <th className="px-3 py-3">Title</th>
+                    <th className="px-3 py-3">Source</th>
+                    <th className="px-3 py-3">Processing</th>
+                    <th className="px-3 py-3">Embedding</th>
+                    <th className="px-3 py-3">Chunks</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line bg-panel">
+                  {evidence.map((item) => (
+                    <tr key={item.id}>
+                      <td className="px-3 py-3">
+                        <div className="font-medium text-slate-200">{item.title}</div>
+                        <div className="mt-1 line-clamp-2 text-[11px] text-slate-500">{item.normalized_content ?? item.raw_content}</div>
+                      </td>
+                      <td className="px-3 py-3"><SourceTypeBadge sourceType={item.source_type} /></td>
+                      <td className="px-3 py-3"><ProcessingStatusBadge status={item.processing_status} /></td>
+                      <td className="px-3 py-3"><EmbeddingStatusBadge status={item.embedding_status} /></td>
+                      <td className="px-3 py-3 text-slate-300">{chunkCounts.get(item.id) ?? 0}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-            <div className="terminal px-4 py-3 font-mono text-[11px] leading-6 text-[#ffb86b]">
-              normalizer :: status=ready
-              <br />
-              chunker :: overlap=120 size=900
-              <br />
-              embeddings :: sentence-transformers/all-MiniLM-L6-v2
+            <div>
+              <div className="mb-3 text-sm font-medium text-white">Chunk Preview</div>
+              <ChunkList chunks={chunks} />
             </div>
           </CardContent>
         </Card>
 
         <div className="space-y-4">
-          <SemanticSearchPanel incidentId={1} initialResults={retrieval.results} />
+          <SemanticSearchPanel incidentId={1} initialResults={retrieval.results} metadataFilters={{ service: "payments-api" }} />
           <Card>
             <CardHeader>
-              <div className="text-sm font-medium text-white">Latest Retrieval Hits</div>
+              <div className="text-sm font-medium text-white">Ranked Evidence Results</div>
             </CardHeader>
             <CardContent>
               <RetrievalResults results={retrieval.results} />

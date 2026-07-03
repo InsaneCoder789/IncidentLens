@@ -92,7 +92,12 @@ def process_all_incident_evidence(incident_id: int, db: Session = Depends(get_db
     if not incident:
         raise HTTPException(status_code=404, detail="Incident not found")
     result = process_all_evidence_for_incident(db, incident_id)
-    return ProcessAllEvidenceResponse(**result.__dict__)
+    return ProcessAllEvidenceResponse(
+        incident_id=result.incident_id,
+        processed=result.processed,
+        failed=result.failed,
+        chunks_created=result.chunks_created,
+    )
 
 
 @router.get("/{incident_id}/chunks", response_model=list[EvidenceChunkRead])

@@ -37,7 +37,12 @@ function mockSearchResults(request: RetrievalSearchRequest): RetrievalSearchResp
   const query = request.query.toLowerCase();
   const results = mockRetrievalResults.filter((item) => {
     const haystack = `${item.title} ${item.content} ${item.source_type}`.toLowerCase();
-    return query.length === 0 || haystack.includes(query);
+    const matchesQuery = query.length === 0 || haystack.includes(query);
+    const matchesSource = !request.source_types?.length || request.source_types.includes(item.source_type);
+    const matchesMetadata =
+      !request.metadata_filters ||
+      Object.entries(request.metadata_filters).every(([key, value]) => String(item.metadata[key]) === String(value));
+    return matchesQuery && matchesSource && matchesMetadata;
   });
   return { query: request.query, results: results.slice(0, request.top_k ?? 8) };
 }
