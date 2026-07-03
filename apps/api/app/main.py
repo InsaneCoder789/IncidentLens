@@ -7,6 +7,9 @@ from app.api.routes.incidents import router as incidents_router
 from app.api.routes.retrieval import router as retrieval_router
 from app.core.logging import configure_logging
 from app.db.session import engine
+from app.models import investigation as _investigation_models  # noqa: F401
+from app.models import incident as _incident_models  # noqa: F401
+from app.models import evidence as _evidence_models  # noqa: F401
 from app.models.types import Base
 from app.seed.demo import seed_demo
 

@@ -2,7 +2,10 @@ import type {
   EvidenceChunk,
   EvidenceItem,
   EvidenceProcessResponse,
+  IncidentReport,
+  IncidentTrace,
   Incident,
+  InvestigationRunResponse,
   ProcessAllEvidenceResponse,
   RetrievalSearchRequest,
   RetrievalSearchResponse,
@@ -11,6 +14,9 @@ import {
   evidence as mockEvidence,
   incidentChunks as mockIncidentChunks,
   incidents as mockIncidents,
+  mockIncidentReport,
+  mockIncidentTrace,
+  mockInvestigationRun,
   retrievalResults as mockRetrievalResults,
 } from "@/lib/mock-data";
 
@@ -115,4 +121,41 @@ export async function searchEvidence(payload: RetrievalSearchRequest): Promise<R
   } catch {
     return mockSearchResults(payload);
   }
+}
+
+export async function runInvestigation(incidentId: number): Promise<InvestigationRunResponse> {
+  try {
+    return await requestJson<InvestigationRunResponse>(`/api/incidents/${incidentId}/investigate`, { method: "POST" });
+  } catch {
+    return mockInvestigationRun;
+  }
+}
+
+export async function getIncidentReport(incidentId: number): Promise<IncidentReport | undefined> {
+  try {
+    return await requestJson<IncidentReport>(`/api/incidents/${incidentId}/report`);
+  } catch {
+    return Number(mockIncidentReport.incident_id) === incidentId ? mockIncidentReport : undefined;
+  }
+}
+
+export async function getIncidentTrace(incidentId: number): Promise<IncidentTrace> {
+  try {
+    return await requestJson<IncidentTrace>(`/api/incidents/${incidentId}/trace`);
+  } catch {
+    return mockIncidentTrace;
+  }
+}
+
+export function traceSummary(trace: IncidentTrace): { totalLatencyMs: number; totalCostUsd: number; completed: number; failed: number } {
+  return trace.agent_runs.reduce(
+    (accumulator, run) => {
+      accumulator.totalLatencyMs += run.latency_ms;
+      accumulator.totalCostUsd += run.estimated_cost_usd;
+      if (run.status === "completed") accumulator.completed += 1;
+      if (run.status === "failed") accumulator.failed += 1;
+      return accumulator;
+    },
+    { totalLatencyMs: 0, totalCostUsd: 0, completed: 0, failed: 0 },
+  );
 }

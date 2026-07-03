@@ -1,5 +1,6 @@
 name: root_cause_agent
 version: v1
-content: |
-  Analyze the retrieved evidence and generate concise root cause hypotheses with confidence.
-
+description: Generates and scores grounded root cause hypotheses.
+template: |
+  You are the Root Cause Agent for IncidentLens AI.
+  Generate multiple concise hypotheses, cite support and contradictions, and select the likeliest root cause.

@@ -79,6 +79,46 @@ flowchart TD
 - Retrieval endpoint:
   - `POST /api/retrieval/search`
 
+## Multi-Agent Investigation Workflow
+
+IncidentLens AI uses a multi-step agent workflow to investigate incidents:
+1. Intake Agent classifies the incident and creates an investigation plan.
+2. Retrieval Agent searches indexed evidence using the RAG pipeline.
+3. Tool Execution Agent calls safe mock integrations.
+4. Root Cause Agent generates and scores hypotheses.
+5. Remediation Agent creates safe mitigation and verification plans.
+6. Evaluation Agent checks the final report for grounding, safety, and citation coverage.
+
+```mermaid
+flowchart TD
+    A[Incident] --> B[Intake Agent]
+    B --> C[Retrieval Agent]
+    C --> D[Tool Execution Agent]
+    D --> E[Root Cause Agent]
+    E --> F[Remediation Agent]
+    F --> G[Evaluation Agent]
+    G --> H[Report Builder]
+    H --> I[Incident Report]
+    B --> J[Agent Runs DB]
+    C --> J
+    D --> J
+    E --> J
+    F --> J
+    G --> J
+    D --> K[Tool Calls DB]
+```
+
+### Phase 3 Investigation Details
+
+- Mock LLM mode is the default and is deterministic for the seeded Payment API incident
+- Trace viewer shows persisted agent runs, prompt versions, model names, token counts, latency, and tool calls
+- Reports are generated in a structured Markdown format with evidence citations like `EVID-001`
+- Dangerous production actions are never executed automatically and only appear under approval-gated actions
+- Investigation endpoints:
+  - `POST /api/incidents/{incident_id}/investigate`
+  - `GET /api/incidents/{incident_id}/report`
+  - `GET /api/incidents/{incident_id}/trace`
+
 ## Local Setup
 
 1. Copy `.env.example` to `.env`.
@@ -150,6 +190,9 @@ The seeded incident is:
 - `POST /api/incidents/{incident_id}/evidence`
 - `POST /api/incidents/{incident_id}/evidence/process-all`
 - `GET /api/incidents/{incident_id}/chunks`
+- `POST /api/incidents/{incident_id}/investigate`
+- `GET /api/incidents/{incident_id}/report`
+- `GET /api/incidents/{incident_id}/trace`
 - `POST /api/evidence/{evidence_id}/process`
 - `POST /api/retrieval/search`
 - `DELETE /api/evidence/{evidence_id}`
@@ -189,6 +232,45 @@ curl -X POST http://localhost:8000/api/retrieval/search \
 
 Expected results should include evidence related to `PR #482`, `SignatureMismatchError`, `payments/webhook.py`, `v1.42.0`, `payment_webhook_strict_mode`, the Prometheus spike, and `INC-104`.
 
+## How To Run Investigation Locally
+
+1. Seed the demo incident and start the stack.
+
+```bash
+make seed
+make dev
+```
+
+2. Process evidence if needed.
+
+```bash
+curl -X POST http://localhost:8000/api/incidents/1/evidence/process-all
+```
+
+3. Run the multi-agent investigation.
+
+```bash
+curl -X POST http://localhost:8000/api/incidents/1/investigate
+```
+
+4. Fetch the persisted report.
+
+```bash
+curl http://localhost:8000/api/incidents/1/report
+```
+
+5. Fetch the persisted trace.
+
+```bash
+curl http://localhost:8000/api/incidents/1/trace
+```
+
+Expected outcome:
+- the root cause is `Webhook validation regression`
+- the report cites `PR #482`, `SignatureMismatchError`, `payments/webhook.py`, `v1.42.0`, `payment_webhook_strict_mode`, `INC-104`, and the statuspage evidence
+- dangerous actions appear only in `Approval-Gated Actions`
+- the trace includes persisted agent runs and tool calls
+
 ## Frontend Screenshots
 
 Placeholder for dashboard and incident workspace screenshots.
@@ -203,7 +285,6 @@ Added LLMOps features including prompt versioning, model routing, agent traces, 
 
 ## Future Roadmap
 
-- RAG ingestion and evidence chunking
-- multi-agent investigation flow
-- trace viewer and eval dashboard
-- integration adapters for GitHub, Sentry, Prometheus, and Statuspage
+- real LLM provider integrations beyond mock mode
+- deeper external integration adapters for GitHub, Sentry, Prometheus, and Statuspage
+- expanded evaluation datasets and regression automation

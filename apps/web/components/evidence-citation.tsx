@@ -10,7 +10,7 @@ import type {
   EvalMetric,
   RetrievalResult,
   SettingField,
-  ToolCall,
+  ToolCallSummary,
   TraceNode,
 } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
@@ -440,7 +440,7 @@ export function AgentRunCard({ title, latency, tokens, model, toolCalls, summary
   );
 }
 
-export function ToolCallPanel({ calls }: { calls: ToolCall[] }) {
+export function ToolCallPanel({ calls }: { calls: ToolCallSummary[] }) {
   return (
     <div className="rounded-xl border border-line bg-panel">
       <div className="border-b border-line px-4 py-3">

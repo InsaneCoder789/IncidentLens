@@ -132,10 +132,64 @@ export type TraceNode = {
   summary: string;
 };
 
-export type ToolCall = {
+export type ToolCallSummary = {
   name: string;
   status: "success" | "queued" | "warning";
   latency: string;
+};
+
+export type AgentRun = {
+  id: string;
+  agent_name: string;
+  status: "pending" | "running" | "completed" | "failed";
+  input_summary: string;
+  output_summary: string;
+  model_name: string;
+  prompt_version: string;
+  latency_ms: number;
+  token_input: number;
+  token_output: number;
+  estimated_cost_usd: number;
+  started_at: string;
+  completed_at?: string | null;
+  error_message?: string | null;
+};
+
+export type ToolCall = {
+  id: string;
+  agent_run_id: string;
+  tool_name: string;
+  status: "completed" | "failed";
+  input_json: Record<string, unknown>;
+  output_json: Record<string, unknown>;
+  latency_ms: number;
+  created_at: string;
+  error_message?: string | null;
+};
+
+export type IncidentReport = {
+  incident_id: string;
+  report_id: string;
+  report_markdown: string;
+  selected_root_cause: string;
+  confidence_score: number;
+  evaluation_score: number;
+  created_at: string;
+};
+
+export type InvestigationRunResponse = {
+  incident_id: string;
+  status: string;
+  report_id: string;
+  selected_root_cause: string;
+  confidence_score: number;
+  quality_score: number;
+};
+
+export type IncidentTrace = {
+  incident_id: string;
+  agent_runs: AgentRun[];
+  tool_calls: ToolCall[];
 };
 
 export type EvidenceSourceSummary = {

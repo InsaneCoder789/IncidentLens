@@ -7,12 +7,15 @@ import type {
   EvidenceItem,
   EvidenceSourceSummary,
   Hypothesis,
+  IncidentReport,
+  IncidentTrace,
   Incident,
+  InvestigationRunResponse,
   MetricStat,
   RetrievalResult,
   SettingSectionData,
   TimelineEvent,
-  ToolCall,
+  ToolCallSummary,
   TraceNode,
 } from "@/lib/types";
 
@@ -389,11 +392,202 @@ export const traceNodes: TraceNode[] = [
   },
 ];
 
-export const toolCalls: ToolCall[] = [
+export const toolCalls: ToolCallSummary[] = [
   { name: "search_evidence", status: "success", latency: "240ms" },
   { name: "list_sentry_errors", status: "success", latency: "680ms" },
   { name: "compare_prompt_versions", status: "warning", latency: "1.1s" },
 ];
+
+export const mockIncidentReport: IncidentReport = {
+  incident_id: "1",
+  report_id: "report-mock-1",
+  report_markdown: `# Incident Report
+## 1. Executive Summary
+Payment failures are most likely caused by a deployment regression introduced by PR #482 in webhook signature validation [EVID-002] with matching runtime failures in payments/webhook.py [EVID-001].
+## 2. Current Status
+The incident remains investigating with elevated payment failures and degraded completion rate [EVID-003].
+## 3. Affected Services
+payments-api [EVID-001]
+## 4. Severity Assessment
+high [EVID-003]
+## 5. Timeline
+- Release v1.42.0 deployed [EVID-002]
+- SignatureMismatchError started after deploy [EVID-001]
+- Prometheus error spike confirmed [EVID-003]
+## 6. Key Evidence
+- [EVID-001] SignatureMismatchError in payments/webhook.py
+- [EVID-002] PR #482 changed webhook validation
+- [EVID-003] Payment service error rate spike
+- [EVID-004] Payment webhook failure runbook
+- [EVID-005] INC-104 similar signature mismatch regression
+- [EVID-006] Payment provider status operational
+## 7. Root Cause Hypotheses
+- Webhook validation regression
+- Third-party payment provider outage
+## 8. Most Likely Root Cause
+Webhook validation regression [EVID-001] [EVID-002] [EVID-004] [EVID-005]
+## 9. Confidence Score
+0.86
+## 10. Recommended Immediate Actions
+- Confirm current payment_webhook_strict_mode feature flag state.
+- Review Sentry SignatureMismatchError volume for release v1.42.0.
+## 11. Approval-Gated Actions
+- Disable payment_webhook_strict_mode feature flag.
+- Rollback release v1.42.0.
+## 12. Rollback or Hotfix Plan
+- Prepare rollback plan for release v1.42.0 if mitigation fails.
+## 13. Verification Checklist
+- 5xx rate returns near baseline.
+- Webhook success rate recovers.
+## 14. Customer-Facing Update
+We are investigating elevated payment failures affecting a subset of checkout attempts.
+## 15. Postmortem Draft
+Strict validation regression introduced in release v1.42.0.
+## 16. Missing Evidence
+- exact rollback result
+- feature flag state at incident start
+## 17. Evaluation Notes
+The report is well supported by GitHub, Sentry, Prometheus, runbook, and previous incident evidence.`,
+  selected_root_cause: "Webhook validation regression",
+  confidence_score: 0.86,
+  evaluation_score: 0.9,
+  created_at: "2026-07-02T06:31:00Z",
+};
+
+export const mockInvestigationRun: InvestigationRunResponse = {
+  incident_id: "1",
+  status: "completed",
+  report_id: "report-mock-1",
+  selected_root_cause: "Webhook validation regression",
+  confidence_score: 0.86,
+  quality_score: 0.9,
+};
+
+export const mockIncidentTrace: IncidentTrace = {
+  incident_id: "1",
+  agent_runs: [
+    {
+      id: "run-1",
+      agent_name: "Intake Agent",
+      status: "completed",
+      input_summary: "Payment API incident with 6 evidence items.",
+      output_summary: "Classified as deployment_regression affecting payments-api.",
+      model_name: "mock-llm",
+      prompt_version: "intake_agent_v1",
+      latency_ms: 120,
+      token_input: 420,
+      token_output: 180,
+      estimated_cost_usd: 0,
+      started_at: "2026-07-02T06:30:00Z",
+      completed_at: "2026-07-02T06:30:00Z",
+      error_message: null,
+    },
+    {
+      id: "run-2",
+      agent_name: "Retrieval Agent",
+      status: "completed",
+      input_summary: "Classified payment incident ready for evidence search.",
+      output_summary: "Collected 6 evidence bundle items and noted 2 missing evidence gaps.",
+      model_name: "mock-llm",
+      prompt_version: "retrieval_agent_v1",
+      latency_ms: 180,
+      token_input: 520,
+      token_output: 210,
+      estimated_cost_usd: 0,
+      started_at: "2026-07-02T06:30:01Z",
+      completed_at: "2026-07-02T06:30:01Z",
+      error_message: null,
+    },
+    {
+      id: "run-3",
+      agent_name: "Tool Execution Agent",
+      status: "completed",
+      input_summary: "Executing safe mock tools for github, sentry, prometheus, statuspage, runbooks, and prior incidents.",
+      output_summary: "Executed 6 safe mock tools and persisted their outputs.",
+      model_name: "mock-llm",
+      prompt_version: "retrieval_agent_v1",
+      latency_ms: 95,
+      token_input: 180,
+      token_output: 120,
+      estimated_cost_usd: 0,
+      started_at: "2026-07-02T06:30:02Z",
+      completed_at: "2026-07-02T06:30:02Z",
+      error_message: null,
+    },
+    {
+      id: "run-4",
+      agent_name: "Root Cause Agent",
+      status: "completed",
+      input_summary: "Evidence bundle ready for root cause ranking.",
+      output_summary: "Generated 2 hypotheses and selected Webhook validation regression.",
+      model_name: "mock-llm",
+      prompt_version: "root_cause_agent_v1",
+      latency_ms: 150,
+      token_input: 610,
+      token_output: 250,
+      estimated_cost_usd: 0,
+      started_at: "2026-07-02T06:30:03Z",
+      completed_at: "2026-07-02T06:30:03Z",
+      error_message: null,
+    },
+    {
+      id: "run-5",
+      agent_name: "Remediation Agent",
+      status: "completed",
+      input_summary: "Selected root cause available for safe planning.",
+      output_summary: "Created immediate, approval-gated, rollback, verification, and customer update plans.",
+      model_name: "mock-llm",
+      prompt_version: "remediation_agent_v1",
+      latency_ms: 135,
+      token_input: 490,
+      token_output: 280,
+      estimated_cost_usd: 0,
+      started_at: "2026-07-02T06:30:04Z",
+      completed_at: "2026-07-02T06:30:04Z",
+      error_message: null,
+    },
+    {
+      id: "run-6",
+      agent_name: "Evaluation Agent",
+      status: "completed",
+      input_summary: "Draft report and remediation plan available for review.",
+      output_summary: "Assigned quality score 0.9 with citation coverage 0.94.",
+      model_name: "mock-llm",
+      prompt_version: "evaluator_agent_v1",
+      latency_ms: 110,
+      token_input: 300,
+      token_output: 160,
+      estimated_cost_usd: 0,
+      started_at: "2026-07-02T06:30:05Z",
+      completed_at: "2026-07-02T06:30:05Z",
+      error_message: null,
+    },
+  ],
+  tool_calls: [
+    {
+      id: "tool-1",
+      agent_run_id: "run-3",
+      tool_name: "search_github_changes",
+      status: "completed",
+      input_json: { incident_id: 1, source_types: ["github_pr", "github_commit"] },
+      output_json: { results: [{ title: "PR #482 changed webhook validation" }] },
+      latency_ms: 14,
+      created_at: "2026-07-02T06:30:02Z",
+      error_message: null,
+    },
+    {
+      id: "tool-2",
+      agent_run_id: "run-3",
+      tool_name: "fetch_sentry_issue",
+      status: "completed",
+      input_json: { incident_id: 1, source_types: ["sentry_issue"] },
+      output_json: { results: [{ title: "SignatureMismatchError in payments/webhook.py" }] },
+      latency_ms: 17,
+      created_at: "2026-07-02T06:30:02Z",
+      error_message: null,
+    },
+  ],
+};
 
 export const evalMetrics: EvalMetric[] = [
   { label: "Retrieval precision", value: "94.2%", sublabel: "up 2.1", tone: "success" },

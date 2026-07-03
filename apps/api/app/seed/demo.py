@@ -1,5 +1,6 @@
 from app.db.session import SessionLocal, engine
 from app.models.types import Base
+from app.models import investigation as _investigation_models  # noqa: F401
 from app.models.incident import Incident
 from app.models.evidence import EvidenceItem
 

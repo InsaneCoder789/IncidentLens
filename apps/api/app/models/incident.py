@@ -45,4 +45,5 @@ class Incident(Base):
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     evidence_items = relationship("EvidenceItem", back_populates="incident", cascade="all, delete-orphan")
-
+    reports = relationship("IncidentReport", back_populates="incident", cascade="all, delete-orphan")
+    agent_runs = relationship("AgentRun", back_populates="incident", cascade="all, delete-orphan")
