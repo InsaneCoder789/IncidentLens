@@ -1,185 +1,227 @@
+![IncidentLens AI banner](docs/assets/incidentlens-banner.svg)
+
 # IncidentLens AI
 
-IncidentLens AI is a production-grade multimodal AI SRE copilot that combines RAG, multi-agent orchestration, LLM evaluation, and LLMOps to investigate production incidents using logs, GitHub changes, Sentry traces, runbooks, metrics, and dashboard screenshots.
+IncidentLens AI is a production-style multimodal AI SRE copilot for investigating incidents with grounded evidence, multi-agent workflows, and LLMOps visibility.
 
-The frontend implementation is rebuilt from the Stitch UI prototype and screens, which serve as the visual source of truth for layout, spacing, hierarchy, and dashboard composition.
+The frontend is implemented from the Stitch UI prototype and screens as the visual source of truth. The current web app intentionally follows the Stitch layout, spacing, hierarchy, dark-mode styling, and workspace composition while keeping the codebase clean, typed, reusable, and backend-ready.
 
-## Overview
+## What’s In The Repo Today
 
-IncidentLens AI is a portfolio-ready incident intelligence platform for SREs, DevOps engineers, platform engineers, and engineering managers. The Phase 1 foundation includes:
+This repository currently includes:
 
-- a FastAPI backend with incident and evidence CRUD
-- PostgreSQL-ready persistence with pgvector support
-- a Next.js App Router frontend
-- a dark-mode engineering dashboard
-- a seeded production-style incident
-- local mock data so the UI works before AI integrations are added
+- a `pnpm` monorepo with `apps/web`, `apps/api`, and `packages/shared`
+- a Next.js App Router frontend for dashboard, incidents, evidence, trace, evals, and settings
+- a FastAPI backend with incident, evidence, retrieval, and investigation endpoints
+- a Phase 2 RAG pipeline with normalization, chunking, embeddings, and hybrid retrieval
+- a Phase 3 multi-agent investigation workflow with persisted reports and traces
+- seeded payment incident data for realistic local demos
+- docs for architecture, RAG, agents, evals, and LLMOps
 
-## Why this matters
+## Product Positioning
 
-Production incident response is noisy, high-stakes, and evidence-heavy. IncidentLens AI demonstrates how to combine retrieval, reasoning, traces, and operational context into a credible incident workflow rather than a toy chatbot.
+This is not a chatbot wrapper. IncidentLens AI is designed as a serious internal engineering platform for:
+
+- Site Reliability Engineers
+- DevOps engineers
+- platform teams
+- backend engineers
+- engineering managers
+- recruiters and hiring managers reviewing applied AI portfolios
+
+It demonstrates how AI can support production incident response while staying grounded in operational evidence and explicit approval boundaries.
 
 ## Tech Stack
 
-- Frontend: Next.js, TypeScript, Tailwind CSS, shadcn/ui-style primitives
-- Backend: FastAPI, SQLAlchemy, PostgreSQL, pgvector, Redis-ready config
-- DevEx: Docker Compose, pnpm workspaces, Makefile
+- Frontend: Next.js 15, React 19, TypeScript, Tailwind CSS, shadcn-style UI primitives
+- Backend: FastAPI, SQLAlchemy, PostgreSQL, pgvector, Redis
+- AI and retrieval: evidence normalization, chunking, embeddings, vector retrieval, keyword fallback, deterministic mock mode
+- DevEx: `pnpm` workspaces, Docker Compose, Makefile, seeded demo flow
 
-## Phase 2 Features
+## Implemented Product Surfaces
 
-- dashboard, incident list, incident detail workspace, evidence workspace, trace viewer, eval dashboard, and LLMOps settings screens rebuilt from the Stitch UI prototype
-- evidence processing pipeline with normalization, chunking, embeddings, chunk storage, and incident-wide citation numbering
-- semantic retrieval search with vector-first matching and keyword fallback
-- incident and evidence APIs ready for the FastAPI backend contracts
-- realistic seeded payment incident data for retrieval and investigation flows
+The current frontend includes these routes:
 
-## Architecture
+- `/` dashboard
+- `/incidents` incident list and queue
+- `/incidents/[id]` investigation workspace
+- `/incidents/[id]/trace` agent trace viewer
+- `/evidence` evidence workspace
+- `/evals` evaluation dashboard
+- `/settings` LLMOps and model settings
+
+Key UI components already present in the codebase include:
+
+- `AppShell`, `Sidebar`, `Topbar`
+- `MetricCard`, `SeverityBadge`, `StatusBadge`
+- `IncidentTable`, `IncidentTimeline`
+- `EvidenceCard`, `EvidenceCitation`, `ConfidenceGauge`
+
+## Monorepo Layout
+
+```text
+IncidentLensAI/
+├── apps/
+│   ├── api/        # FastAPI backend, agents, retrieval, models, seed flow
+│   └── web/        # Next.js frontend rebuilt from Stitch reference screens
+├── config/         # model and runtime configuration
+├── docs/           # architecture, RAG, agents, evals, LLMOps docs
+├── evals/          # evaluation harness assets
+├── packages/       # shared workspace packages
+├── prompts/        # versioned prompt definitions for agent steps
+├── docker-compose.yml
+├── Makefile
+└── README.md
+```
+
+## System Architecture
 
 ```mermaid
 flowchart LR
-  UI[Next.js Web App] --> API[FastAPI API]
-  API --> DB[(PostgreSQL + pgvector)]
-  API --> REDIS[(Redis)]
-  API --> SEED[Demo Seed Script]
+  UI["Next.js Web App"] --> API["FastAPI API"]
+  API --> DB[("PostgreSQL + pgvector")]
+  API --> REDIS[("Redis")]
+  API --> PROMPTS["Prompt Registry"]
+  API --> AGENTS["Investigation Agents"]
+  API --> SEED["Seeded Payment Incident"]
 ```
 
-## RAG Pipeline
-
-IncidentLens AI uses a retrieval augmented generation foundation to ground incident investigation in real operational evidence.
-The pipeline:
-1. Evidence normalization
-2. Chunking with metadata preservation
-3. HuggingFace embedding generation
-4. pgvector vector storage
-5. Hybrid retrieval
-6. Keyword fallback
-7. Citation-grounded evidence results
+## Evidence And Retrieval Flow
 
 ```mermaid
 flowchart TD
-    A[Evidence Item] --> B[Normalize Content]
-    B --> C[Chunk Evidence]
-    C --> D[Generate Embeddings]
-    D --> E[Store in pgvector]
-    E --> F[Semantic Retrieval]
-    B --> G[Keyword Index / Fallback]
-    G --> H[Hybrid Results]
-    F --> H
-    H --> I[Citation Grounded Evidence Results]
+  A["Evidence Item"] --> B["Normalize Content"]
+  B --> C["Chunk Evidence"]
+  C --> D["Generate Embeddings"]
+  D --> E["Store Vectors"]
+  B --> F["Keyword Fallback Index"]
+  E --> G["Semantic Retrieval"]
+  F --> H["Hybrid Results"]
+  G --> H
+  H --> I["Citation-Grounded Evidence Results"]
 ```
 
-### Phase 2 Retrieval Details
+### Retrieval Notes
 
-- Embedding model: `sentence-transformers/all-MiniLM-L6-v2`
-- Fallback mode: deterministic 384-dimension embeddings are generated automatically if the HuggingFace model cannot load locally
-- Citation format: `EVID-001`, `EVID-002`, `EVID-003`
-- Processing endpoints:
+- Embedding model target: `sentence-transformers/all-MiniLM-L6-v2`
+- Fallback path: deterministic 384-dimension embeddings when the local model is unavailable
+- Citation style: `EVID-001`, `EVID-002`, `EVID-003`
+- Processing routes:
   - `POST /api/evidence/{evidence_id}/process`
   - `POST /api/incidents/{incident_id}/evidence/process-all`
-- Retrieval endpoint:
+- Retrieval route:
   - `POST /api/retrieval/search`
 
-## Multi-Agent Investigation Workflow
-
-IncidentLens AI uses a multi-step agent workflow to investigate incidents:
-1. Intake Agent classifies the incident and creates an investigation plan.
-2. Retrieval Agent searches indexed evidence using the RAG pipeline.
-3. Tool Execution Agent calls safe mock integrations.
-4. Root Cause Agent generates and scores hypotheses.
-5. Remediation Agent creates safe mitigation and verification plans.
-6. Evaluation Agent checks the final report for grounding, safety, and citation coverage.
+## Investigation Workflow
 
 ```mermaid
 flowchart TD
-    A[Incident] --> B[Intake Agent]
-    B --> C[Retrieval Agent]
-    C --> D[Tool Execution Agent]
-    D --> E[Root Cause Agent]
-    E --> F[Remediation Agent]
-    F --> G[Evaluation Agent]
-    G --> H[Report Builder]
-    H --> I[Incident Report]
-    B --> J[Agent Runs DB]
-    C --> J
-    D --> J
-    E --> J
-    F --> J
-    G --> J
-    D --> K[Tool Calls DB]
+  A["Incident"] --> B["Intake Agent"]
+  B --> C["Retrieval Agent"]
+  C --> D["Tool Execution Agent"]
+  D --> E["Root Cause Agent"]
+  E --> F["Remediation Agent"]
+  F --> G["Evaluation Agent"]
+  G --> H["Report Builder"]
+  H --> I["Persisted Incident Report"]
+  B --> J["Agent Run Trace"]
+  C --> J
+  D --> J
+  E --> J
+  F --> J
+  G --> J
+  D --> K["Tool Call Records"]
 ```
 
-### Phase 3 Investigation Details
+### Investigation Notes
 
-- Mock LLM mode is the default and is deterministic for the seeded Payment API incident
-- Trace viewer shows persisted agent runs, prompt versions, model names, token counts, latency, and tool calls
-- Reports are generated in a structured Markdown format with evidence citations like `EVID-001`
-- Dangerous production actions are never executed automatically and only appear under approval-gated actions
-- Investigation endpoints:
+- mock LLM mode is enabled by default for deterministic local demos
+- reports are persisted and rendered with evidence citations
+- trace data captures agent runs, prompt versions, model names, latency, and token counts
+- risky remediation steps remain approval-gated and are never auto-executed
+- investigation routes:
   - `POST /api/incidents/{incident_id}/investigate`
   - `GET /api/incidents/{incident_id}/report`
   - `GET /api/incidents/{incident_id}/trace`
 
-## Local Setup
+## Demo Scenario
 
-1. Copy `.env.example` to `.env`.
-2. Start the database stack.
-3. Run the backend and frontend dev servers.
-4. Seed the demo incident.
+The seeded incident models a realistic payment outage:
 
-### Docker
+- Title: `Payment API failures after webhook deployment`
+- Severity: `high`
+- Status: `investigating`
+- Service: `payments-api`
 
-```bash
-docker compose up --build
-```
+Expected evidence and retrieval results reference items like `PR #482`, `SignatureMismatchError`, `payments/webhook.py`, `v1.42.0`, `payment_webhook_strict_mode`, Prometheus error spikes, and `INC-104`.
 
-### Backend
+## Local Development
 
-```bash
-cd apps/api
-python3 -m pip install -r requirements.txt
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-### Frontend
+### 1. Install dependencies
 
 ```bash
-cd apps/web
 pnpm install
-pnpm dev
+python3 -m pip install -r apps/api/requirements.txt
 ```
 
-### Seed data
+### 2. Create environment config
 
 ```bash
-make seed
+cp .env.example .env
 ```
 
-### One-command local dev
-
-```bash
-make dev
-```
-
-## Environment Variables
+Current env variables:
 
 - `DATABASE_URL`
 - `REDIS_URL`
 - `BACKEND_HOST`
 - `BACKEND_PORT`
+- `FRONTEND_PORT`
 - `NEXT_PUBLIC_API_URL`
+- `ENVIRONMENT`
 - `MOCK_MODE`
 
-## Demo Scenario
+### 3. Start with Docker
 
-The seeded incident is:
+```bash
+docker compose up --build
+```
 
-- Title: Payment API failures after webhook deployment
-- Severity: high
-- Status: investigating
-- Service: `payments-api`
+### 4. Or run locally with Make
 
-## API Reference
+```bash
+make dev
+```
 
+Useful targets:
+
+- `make setup`
+- `make dev`
+- `make dev-web`
+- `make dev-api`
+- `make seed`
+- `make docker-up`
+- `make docker-down`
+
+### 5. Run services manually
+
+Backend:
+
+```bash
+cd apps/api
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+Frontend:
+
+```bash
+cd apps/web
+pnpm dev
+```
+
+## API Surface
+
+- `GET /`
 - `GET /api/health`
 - `GET /api/incidents`
 - `POST /api/incidents`
@@ -188,39 +230,24 @@ The seeded incident is:
 - `DELETE /api/incidents/{incident_id}`
 - `GET /api/incidents/{incident_id}/evidence`
 - `POST /api/incidents/{incident_id}/evidence`
+- `DELETE /api/evidence/{evidence_id}`
+- `POST /api/evidence/{evidence_id}/process`
 - `POST /api/incidents/{incident_id}/evidence/process-all`
 - `GET /api/incidents/{incident_id}/chunks`
+- `POST /api/retrieval/search`
 - `POST /api/incidents/{incident_id}/investigate`
 - `GET /api/incidents/{incident_id}/report`
 - `GET /api/incidents/{incident_id}/trace`
-- `POST /api/evidence/{evidence_id}/process`
-- `POST /api/retrieval/search`
-- `DELETE /api/evidence/{evidence_id}`
 
-## How To Test Retrieval Locally
+## Quick Verification
 
-1. Install dependencies and seed the demo incident.
+### Test retrieval locally
 
 ```bash
 make setup
 make seed
-```
-
-2. Start the API and frontend.
-
-```bash
 make dev
-```
-
-3. Process all evidence for the seeded incident.
-
-```bash
 curl -X POST http://localhost:8000/api/incidents/1/evidence/process-all
-```
-
-4. Run a retrieval query.
-
-```bash
 curl -X POST http://localhost:8000/api/retrieval/search \
   -H "Content-Type: application/json" \
   -d '{
@@ -230,61 +257,59 @@ curl -X POST http://localhost:8000/api/retrieval/search \
   }'
 ```
 
-Expected results should include evidence related to `PR #482`, `SignatureMismatchError`, `payments/webhook.py`, `v1.42.0`, `payment_webhook_strict_mode`, the Prometheus spike, and `INC-104`.
-
-## How To Run Investigation Locally
-
-1. Seed the demo incident and start the stack.
+### Test investigation locally
 
 ```bash
 make seed
 make dev
-```
-
-2. Process evidence if needed.
-
-```bash
 curl -X POST http://localhost:8000/api/incidents/1/evidence/process-all
-```
-
-3. Run the multi-agent investigation.
-
-```bash
 curl -X POST http://localhost:8000/api/incidents/1/investigate
-```
-
-4. Fetch the persisted report.
-
-```bash
 curl http://localhost:8000/api/incidents/1/report
-```
-
-5. Fetch the persisted trace.
-
-```bash
 curl http://localhost:8000/api/incidents/1/trace
 ```
 
-Expected outcome:
-- the root cause is `Webhook validation regression`
-- the report cites `PR #482`, `SignatureMismatchError`, `payments/webhook.py`, `v1.42.0`, `payment_webhook_strict_mode`, `INC-104`, and the statuspage evidence
-- dangerous actions appear only in `Approval-Gated Actions`
-- the trace includes persisted agent runs and tool calls
+## Documentation
 
-## Frontend Screenshots
+Additional project notes live in:
 
-Placeholder for dashboard and incident workspace screenshots.
+- `docs/architecture.md`
+- `docs/rag-design.md`
+- `docs/agent-design.md`
+- `docs/eval-design.md`
+- `docs/llmops.md`
 
-## Resume-Ready Impact
+## Expected Investigation Outcome
 
-Built IncidentLens AI, a multimodal AI SRE platform using FastAPI, Next.js, LangGraph, PostgreSQL, pgvector, and HuggingFace embeddings to investigate production incidents across logs, GitHub changes, Sentry errors, runbooks, and dashboard screenshots.
-Designed a hybrid RAG pipeline with chunking, semantic search, metadata filtering, reranking, and citation-grounded generation for incident evidence retrieval.
-Implemented a multi-agent investigation workflow with intake, retrieval, root-cause, remediation, and evaluator agents, producing structured incident reports with confidence scores and evidence citations.
-Built an LLM evaluation harness measuring Recall@5, root cause accuracy, citation coverage, unsupported claim rate, unsafe recommendation rate, latency, and estimated cost per incident.
-Added LLMOps features including prompt versioning, model routing, agent traces, latency tracking, cost monitoring, fallback models, and eval regression tests.
+For the seeded incident, the current investigation flow should converge on:
+
+- root cause: `Webhook validation regression`
+- grounded citations across `PR #482`, `SignatureMismatchError`, `payments/webhook.py`, `v1.42.0`, `payment_webhook_strict_mode`, `INC-104`, and statuspage evidence
+- approval-gated handling for risky actions
+- persisted trace output with agent runs and tool calls
+
+## Portfolio Value
+
+This project currently demonstrates:
+
+- serious AI product framing beyond chat UX
+- a Stitch-aligned frontend rebuilt as production-grade React code
+- RAG over operational evidence instead of toy document retrieval
+- multi-step investigation orchestration with persisted traces and reports
+- LLMOps-oriented thinking around prompt versions, costs, latency, and evaluation surfaces
 
 ## Future Roadmap
 
-- real LLM provider integrations beyond mock mode
-- deeper external integration adapters for GitHub, Sentry, Prometheus, and Statuspage
-- expanded evaluation datasets and regression automation
+- real provider integrations beyond deterministic mock mode
+- deeper adapters for GitHub, Sentry, Prometheus, and Statuspage
+- broader eval datasets and regression automation
+- richer evidence ingestion for screenshots, documents, and multimodal workflows
+
+## Current Status
+
+The repository currently reflects:
+
+- Phase 2 Stitch-aligned frontend and RAG workflow work
+- Phase 2 retrieval verification and seeded evidence improvements
+- Phase 3 multi-agent investigation, trace persistence, report generation, and mock model routing
+
+This README is intentionally aligned with the code as it exists now, including the Stitch-based frontend direction and the current backend integration surface.

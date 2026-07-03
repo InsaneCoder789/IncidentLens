@@ -1,0 +1,41 @@
+<svg width="1280" height="320" viewBox="0 0 1280 320" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1280" height="320" rx="24" fill="#07111F"/>
+  <rect x="24" y="24" width="1232" height="272" rx="18" fill="#0B1627" stroke="#18324F"/>
+  <path d="M0 244C179.242 189.408 323.904 180.61 433.986 217.606C544.068 254.602 650.981 264.131 754.724 246.192C858.466 228.253 1033.56 183.867 1280 113.036V320H0V244Z" fill="url(#paint0_linear_0_1)" fill-opacity="0.25"/>
+  <path d="M65 91H229" stroke="#17314F" stroke-width="2"/>
+  <path d="M65 229H229" stroke="#17314F" stroke-width="2"/>
+  <rect x="65" y="111" width="164" height="98" rx="14" fill="#091321" stroke="#214A73"/>
+  <circle cx="103" cy="144" r="10" fill="#10B981"/>
+  <circle cx="103" cy="174" r="10" fill="#F97316"/>
+  <circle cx="103" cy="204" r="10" fill="#EF4444"/>
+  <path d="M124 144H196" stroke="#2C5C8D" stroke-width="6" stroke-linecap="round"/>
+  <path d="M124 174H182" stroke="#2C5C8D" stroke-width="6" stroke-linecap="round"/>
+  <path d="M124 204H210" stroke="#2C5C8D" stroke-width="6" stroke-linecap="round"/>
+  <rect x="287" y="78" width="274" height="164" rx="18" fill="#091321" stroke="#214A73"/>
+  <rect x="309" y="102" width="230" height="18" rx="9" fill="#123A5F"/>
+  <rect x="309" y="138" width="96" height="74" rx="12" fill="#0F2438" stroke="#17314F"/>
+  <rect x="421" y="138" width="118" height="16" rx="8" fill="#0EA5E9" fill-opacity="0.35"/>
+  <rect x="421" y="168" width="98" height="12" rx="6" fill="#17314F"/>
+  <rect x="421" y="190" width="74" height="12" rx="6" fill="#17314F"/>
+  <path d="M447 165C463.569 165 477 151.569 477 135C477 118.431 463.569 105 447 105C430.431 105 417 118.431 417 135C417 151.569 430.431 165 447 165Z" fill="#38BDF8" fill-opacity="0.18"/>
+  <path d="M713 89L775 124L713 159L651 124L713 89Z" fill="#0B2740" stroke="#2A86C7" stroke-width="2"/>
+  <path d="M713 159L775 194L713 229L651 194L713 159Z" fill="#0B2740" stroke="#2A86C7" stroke-width="2"/>
+  <path d="M775 124L837 159L775 194L713 159L775 124Z" fill="#0E3353" stroke="#2A86C7" stroke-width="2"/>
+  <path d="M651 124L713 159L651 194L589 159L651 124Z" fill="#091F34" stroke="#2A86C7" stroke-width="2"/>
+  <path d="M851 103H1029" stroke="#17314F" stroke-width="2"/>
+  <rect x="851" y="124" width="364" height="114" rx="16" fill="#091321" stroke="#214A73"/>
+  <rect x="873" y="148" width="132" height="68" rx="10" fill="#0F2438" stroke="#17314F"/>
+  <path d="M889 198L913 176L933 188L965 156L989 170" stroke="#38BDF8" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="1025" y="146" width="168" height="16" rx="8" fill="#17314F"/>
+  <rect x="1025" y="174" width="146" height="12" rx="6" fill="#17314F"/>
+  <rect x="1025" y="198" width="110" height="12" rx="6" fill="#17314F"/>
+  <text x="287" y="56" fill="#7DD3FC" font-family="Arial, Helvetica, sans-serif" font-size="16" letter-spacing="2.4">INCIDENTLENS AI</text>
+  <text x="287" y="286" fill="#C7D8EA" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="700">Multimodal AI SRE Copilot for Incident Intelligence</text>
+  <text x="287" y="309" fill="#7F97B3" font-family="Arial, Helvetica, sans-serif" font-size="18">RAG, investigation workflows, grounded reports, and Stitch-aligned engineering dashboards</text>
+  <defs>
+    <linearGradient id="paint0_linear_0_1" x1="147" y1="148" x2="1118" y2="320" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0EA5E9"/>
+      <stop offset="1" stop-color="#22D3EE"/>
+    </linearGradient>
+  </defs>
+</svg>
