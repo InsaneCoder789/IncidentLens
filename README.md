@@ -15,6 +15,9 @@ This repository currently includes:
 - a FastAPI backend with incident, evidence, retrieval, and investigation endpoints
 - a Phase 2 RAG pipeline with normalization, chunking, embeddings, and hybrid retrieval
 - a Phase 3 multi-agent investigation workflow with persisted reports and traces
+- a Phase 4 mock integration layer for GitHub, Sentry, Prometheus, Statuspage, and runbook evidence import
+- a Phase 5 local eval harness with CLI, API, persistence, and dashboard history
+- a Phase 6 LLMOps surface for prompt versions, model routing, latency, token usage, and cost visibility
 - seeded payment incident data for realistic local demos
 - docs for architecture, RAG, agents, evals, and LLMOps
 
@@ -144,6 +147,54 @@ flowchart TD
   - `GET /api/incidents/{incident_id}/report`
   - `GET /api/incidents/{incident_id}/trace`
 
+## Mock Integrations
+
+Phase 4 adds clean mock production adapters that stay separate from agent logic:
+
+- GitHub
+- Sentry
+- Prometheus
+- Statuspage
+- runbook and prior-incident knowledge import
+
+Current integration routes:
+
+- `GET /api/integrations/health`
+- `POST /api/integrations/{integration_key}/incidents/{incident_id}/import`
+
+These adapters power:
+
+- integration health indicators in `/evidence`
+- import-evidence buttons for the seeded incident
+- tool execution outputs during the investigation workflow
+
+## Evaluation Methodology
+
+Phase 5 includes a deterministic local eval harness designed for portfolio demonstrations and regression checks.
+
+Current eval metrics:
+
+- Recall@5
+- Recall@10
+- MRR
+- root cause accuracy
+- citation coverage
+- unsupported claim rate
+- unsafe action rate
+- average latency
+- average estimated cost
+
+Current eval execution paths:
+
+- CLI: `./.venv/bin/python evals/run_eval.py`
+- API: `POST /api/evals/run`
+- History API: `GET /api/evals/history`
+- Frontend: `/evals`
+
+The seeded dataset currently lives at:
+
+- `evals/datasets/payment_api_incident.json`
+
 ## Demo Scenario
 
 The seeded incident models a realistic payment outage:
@@ -203,6 +254,12 @@ Useful targets:
 - `make docker-up`
 - `make docker-down`
 
+The intended local Python runtime is the project venv:
+
+```bash
+.venv/bin/uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 --app-dir apps/api
+```
+
 ### 5. Run services manually
 
 Backend:
@@ -235,9 +292,13 @@ pnpm dev
 - `POST /api/incidents/{incident_id}/evidence/process-all`
 - `GET /api/incidents/{incident_id}/chunks`
 - `POST /api/retrieval/search`
+- `GET /api/integrations/health`
+- `POST /api/integrations/{integration_key}/incidents/{incident_id}/import`
 - `POST /api/incidents/{incident_id}/investigate`
 - `GET /api/incidents/{incident_id}/report`
 - `GET /api/incidents/{incident_id}/trace`
+- `GET /api/evals/history`
+- `POST /api/evals/run`
 
 ## Quick Verification
 
@@ -268,6 +329,28 @@ curl http://localhost:8000/api/incidents/1/report
 curl http://localhost:8000/api/incidents/1/trace
 ```
 
+## Demo Walkthrough
+
+Use this flow for a clean local product demo:
+
+1. Start the stack with the project venv-backed API and the Next.js frontend.
+2. Open `/` to show the dashboard and active Payment API incident.
+3. Open `/evidence` to show:
+   - integration health
+   - import buttons for GitHub, Sentry, Prometheus, Statuspage, and runbook knowledge
+   - processed evidence and ranked retrieval results
+4. Open `/incidents/1` and run the investigation workflow.
+5. Review the generated report and approval-gated actions.
+6. Open `/incidents/1/trace` to show:
+   - agent order
+   - latency
+   - token counts
+   - tool calls
+7. Open `/evals` and run the eval suite to show persisted quality metrics.
+8. Open `/settings` to show mock mode, prompt registry, integration health, and eval-backed LLMOps status.
+
+This walkthrough now works fully in mock mode without paid APIs.
+
 ## Documentation
 
 Additional project notes live in:
@@ -295,6 +378,8 @@ This project currently demonstrates:
 - a Stitch-aligned frontend rebuilt as production-grade React code
 - RAG over operational evidence instead of toy document retrieval
 - multi-step investigation orchestration with persisted traces and reports
+- clean mock production integrations separated from agent logic
+- dataset-backed evaluation history with local CLI and backend execution paths
 - LLMOps-oriented thinking around prompt versions, costs, latency, and evaluation surfaces
 
 ## Future Roadmap
@@ -311,5 +396,8 @@ The repository currently reflects:
 - Phase 2 Stitch-aligned frontend and RAG workflow work
 - Phase 2 retrieval verification and seeded evidence improvements
 - Phase 3 multi-agent investigation, trace persistence, report generation, and mock model routing
+- Phase 4 mock production integration adapters and evidence import surfaces
+- Phase 5 eval runner, eval persistence, eval APIs, and eval dashboard wiring
+- Phase 6 LLMOps documentation, runtime polish, and faster frontend fallback behavior
 
 This README is intentionally aligned with the code as it exists now, including the Stitch-based frontend direction and the current backend integration surface.

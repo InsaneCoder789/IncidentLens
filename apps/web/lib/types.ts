@@ -66,6 +66,21 @@ export type ProcessAllEvidenceResponse = {
   chunks_created: number;
 };
 
+export type IntegrationHealth = {
+  key: string;
+  label: string;
+  status: string;
+  detail: string;
+  source_types: string[];
+};
+
+export type IntegrationImportResponse = {
+  incident_id: number;
+  integration_key: string;
+  imported: number;
+  updated: number;
+};
+
 export type MetricStat = {
   label: string;
   value: string;
@@ -218,6 +233,48 @@ export type EvalFailure = {
   reason: string;
   confidence: string;
   action: string;
+};
+
+export type EvalRun = {
+  id: string;
+  dataset_name: string;
+  recall_at_5: number;
+  recall_at_10: number;
+  mrr: number;
+  root_cause_accuracy: number;
+  citation_coverage: number;
+  unsupported_claim_rate: number;
+  unsafe_action_rate: number;
+  avg_latency_ms: number;
+  avg_cost_usd: number;
+  summary_json: Record<string, unknown>;
+  failed_cases_json: EvalFailure[];
+  created_at: string;
+};
+
+export type EvalRunTriggerResponse = {
+  status: string;
+  run: EvalRun;
+};
+
+export type PromptVersionSummary = {
+  name: string;
+  version: string;
+};
+
+export type LlmopsOverview = {
+  mock_mode: boolean;
+  reasoning_model_primary: string;
+  reasoning_model_fallback: string;
+  embedding_model_name: string;
+  tracing_enabled: boolean;
+  cost_tracking_enabled: boolean;
+  prompt_versioning_enabled: boolean;
+  generation_temperature: number;
+  generation_max_tokens: number;
+  integration_status_summary: Record<string, number>;
+  latest_eval_summary: Record<string, string | number>;
+  prompt_versions: PromptVersionSummary[];
 };
 
 export type SettingField =

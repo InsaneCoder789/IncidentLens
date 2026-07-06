@@ -1,14 +1,15 @@
+import { IntegrationHealthPanel } from "@/components/integration-health-panel";
 import { ChunkList, RetrievalResults, SemanticSearchPanel, VectorIndexStatusCard } from "@/components/evidence-citation";
 import { EmbeddingStatusBadge, ProcessingStatusBadge, SourceTypeBadge } from "@/components/evidence-citation";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { getIncidentChunks, getIncidentEvidence, searchEvidence } from "@/lib/api";
-import { evidenceSources } from "@/lib/mock-data";
+import { getIncidentChunks, getIncidentEvidence, getIntegrationHealth, searchEvidence } from "@/lib/api";
 
 export default async function EvidencePage() {
-  const [evidence, chunks, retrieval] = await Promise.all([
+  const [evidence, chunks, retrieval, integrations] = await Promise.all([
     getIncidentEvidence(1),
     getIncidentChunks(1),
     searchEvidence({ incident_id: 1, query: "What caused the payment API failure?", top_k: 8, score_threshold: 0.2 }),
+    getIntegrationHealth(),
   ]);
 
   const chunkCounts = new Map<number, number>();
@@ -19,21 +20,12 @@ export default async function EvidencePage() {
   return (
     <div className="space-y-4">
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {evidenceSources.map((source) => (
-            <div key={source.name} className="rounded-xl border border-line bg-panel px-4 py-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <div className="text-sm font-medium text-white">{source.name}</div>
-                  <div className="mt-1 text-xs text-slate-500">{source.subtitle}</div>
-                </div>
-                <span className="rounded-full border border-line bg-[#10131b] px-2 py-1 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-300">
-                  {source.status}
-                </span>
-              </div>
-              <div className="mt-4 text-xs text-slate-300">{source.count}</div>
-            </div>
-          ))}
+        <div className="space-y-3">
+          <div>
+            <div className="text-sm font-medium text-white">Integration Health</div>
+            <div className="mt-1 text-xs text-slate-500">Mock production adapters stay separated from agent logic and can import evidence into the demo incident.</div>
+          </div>
+          <IntegrationHealthPanel incidentId={1} integrations={integrations} />
         </div>
         <VectorIndexStatusCard />
       </div>

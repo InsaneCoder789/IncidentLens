@@ -1,0 +1,7 @@
+{
+  "dataset_name": "payment_api_incident_seed_v1",
+  "incident_id": 1,
+  "retrieval_query": "What caused the payment API failure?",
+  "expected_root_cause": "Webhook validation regression",
+  "expected_citations": ["EVID-001", "EVID-002", "EVID-003"]
+}

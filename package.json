@@ -9,9 +9,8 @@
   "scripts": {
     "dev": "pnpm --dir apps/web dev",
     "dev:web": "pnpm --dir apps/web dev",
-    "dev:api": "pnpm --dir apps/api dev",
+    "dev:api": ".venv/bin/uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 --app-dir apps/api",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck"
   }
 }
-

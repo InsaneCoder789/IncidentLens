@@ -2,11 +2,9 @@ from __future__ import annotations
 
 from time import perf_counter
 
-from sqlalchemy import select
-
 from app.agents.base import BaseAgent
 from app.agents.state import InvestigationState
-from app.models.evidence import EvidenceItem
+from app.integrations.service import run_tool_adapter
 from app.models.investigation import ToolCall
 
 
@@ -26,18 +24,7 @@ class ToolExecutionAgent(BaseAgent):
         outputs: dict[str, list[dict]] = {}
         for tool_name, source_types in tools.items():
             start = perf_counter()
-            items = list(
-                self.db.scalars(
-                    select(EvidenceItem).where(
-                        EvidenceItem.incident_id == int(state.incident_id),
-                        EvidenceItem.source_type.in_(source_types),
-                    )
-                )
-            )
-            payload = [
-                {"title": item.title, "source_type": item.source_type, "metadata": item.metadata_json, "snippet": item.normalized_content or item.raw_content}
-                for item in items
-            ]
+            payload = run_tool_adapter(self.db, int(state.incident_id), tool_name)
             outputs[tool_name] = payload
             self.db.add(
                 ToolCall(

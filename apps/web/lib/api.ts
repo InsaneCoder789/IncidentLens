@@ -2,9 +2,14 @@ import type {
   EvidenceChunk,
   EvidenceItem,
   EvidenceProcessResponse,
+  EvalRun,
+  EvalRunTriggerResponse,
   IncidentReport,
   IncidentTrace,
+  IntegrationHealth,
+  IntegrationImportResponse,
   Incident,
+  LlmopsOverview,
   InvestigationRunResponse,
   ProcessAllEvidenceResponse,
   RetrievalSearchRequest,
@@ -21,8 +26,11 @@ import {
 } from "@/lib/mock-data";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const API_TIMEOUT_MS = 1200;
 
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
   try {
     const response = await fetch(`${API_URL}${path}`, {
       ...init,
@@ -31,11 +39,14 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
         ...(init?.headers ?? {}),
       },
       cache: "no-store",
+      signal: controller.signal,
     });
     if (!response.ok) throw new Error(`Request failed: ${response.status}`);
     return (await response.json()) as T;
   } catch {
     throw new Error("API unavailable");
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
@@ -144,6 +155,85 @@ export async function getIncidentTrace(incidentId: number): Promise<IncidentTrac
     return await requestJson<IncidentTrace>(`/api/incidents/${incidentId}/trace`);
   } catch {
     return mockIncidentTrace;
+  }
+}
+
+export async function getIntegrationHealth(): Promise<IntegrationHealth[]> {
+  try {
+    return await requestJson<IntegrationHealth[]>("/api/integrations/health");
+  } catch {
+    return [
+      {
+        key: "github",
+        label: "GitHub",
+        status: "healthy",
+        detail: "Mock PR and deployment history are available.",
+        source_types: ["github_pr", "github_commit"],
+      },
+      {
+        key: "sentry",
+        label: "Sentry",
+        status: "healthy",
+        detail: "SignatureMismatchError traces are indexed for the seeded incident.",
+        source_types: ["sentry_issue"],
+      },
+      {
+        key: "prometheus",
+        label: "Prometheus",
+        status: "healthy",
+        detail: "Error-rate and latency snapshots are available.",
+        source_types: ["prometheus_metric"],
+      },
+      {
+        key: "statuspage",
+        label: "Statuspage",
+        status: "healthy",
+        detail: "Provider availability feed is operational.",
+        source_types: ["statuspage"],
+      },
+      {
+        key: "runbook",
+        label: "Runbook Search",
+        status: "healthy",
+        detail: "Runbook and prior-incident knowledge is available.",
+        source_types: ["runbook", "previous_incident"],
+      },
+    ];
+  }
+}
+
+export async function importIntegrationEvidence(incidentId: number, integrationKey: string): Promise<IntegrationImportResponse> {
+  try {
+    return await requestJson<IntegrationImportResponse>(`/api/integrations/${integrationKey}/incidents/${incidentId}/import`, {
+      method: "POST",
+    });
+  } catch {
+    return {
+      incident_id: incidentId,
+      integration_key: integrationKey,
+      imported: 1,
+      updated: 0,
+    };
+  }
+}
+
+export async function getEvalRuns(): Promise<EvalRun[]> {
+  try {
+    return await requestJson<EvalRun[]>("/api/evals/history");
+  } catch {
+    return [];
+  }
+}
+
+export async function runEvalSuite(): Promise<EvalRunTriggerResponse> {
+  return requestJson<EvalRunTriggerResponse>("/api/evals/run", { method: "POST" });
+}
+
+export async function getLlmopsOverview(): Promise<LlmopsOverview | null> {
+  try {
+    return await requestJson<LlmopsOverview>("/api/llmops/overview");
+  } catch {
+    return null;
   }
 }
 

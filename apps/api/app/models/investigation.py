@@ -91,3 +91,22 @@ class PromptVersion(Base):
     description: Mapped[str] = mapped_column(Text, nullable=False, default="")
     template: Mapped[str] = mapped_column(Text, nullable=False, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
+
+
+class EvalRun(Base):
+    __tablename__ = "eval_runs"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    dataset_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    recall_at_5: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    recall_at_10: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    mrr: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    root_cause_accuracy: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    citation_coverage: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    unsupported_claim_rate: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    unsafe_action_rate: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    avg_latency_ms: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    avg_cost_usd: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    summary_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    failed_cases_json: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
