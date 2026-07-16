@@ -9,3 +9,6 @@ redis>=5.0.0
 alembic>=1.13.0
 pgvector>=0.3.0
 sentence-transformers>=3.0.0
+pypdf>=5.0.0
+pytest>=8.3.0
+httpx>=0.27.0

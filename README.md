@@ -18,8 +18,9 @@ This repository currently includes:
 - a Phase 4 mock integration layer for GitHub, Sentry, Prometheus, Statuspage, and runbook evidence import
 - a Phase 5 local eval harness with CLI, API, persistence, and dashboard history
 - a Phase 6 LLMOps surface for prompt versions, model routing, latency, token usage, and cost visibility
+- a Phase 7 multimodal pipeline for screenshots, PDFs, text documents, and voice notes
 - seeded payment incident data for realistic local demos
-- docs for architecture, RAG, agents, evals, and LLMOps
+- docs for architecture, RAG, agents, evals, LLMOps, and multimodal evidence
 
 ## Product Positioning
 
@@ -59,6 +60,7 @@ Key UI components already present in the codebase include:
 - `MetricCard`, `SeverityBadge`, `StatusBadge`
 - `IncidentTable`, `IncidentTimeline`
 - `EvidenceCard`, `EvidenceCitation`, `ConfidenceGauge`
+- `MultimodalUploadPanel`, `MultimodalEvidenceCard`, media previews, extraction and classification badges
 
 ## Monorepo Layout
 
@@ -114,6 +116,71 @@ flowchart TD
   - `POST /api/incidents/{incident_id}/evidence/process-all`
 - Retrieval route:
   - `POST /api/retrieval/search`
+
+## Multimodal Evidence Processing
+
+IncidentLens AI supports multimodal incident evidence including dashboard screenshots, Sentry screenshots, architecture diagrams, PDF runbooks, postmortems, and voice notes.
+
+The multimodal pipeline:
+
+1. Upload file
+2. Detect file type
+3. Extract text or transcript
+4. Classify visual evidence where applicable
+5. Normalize extracted content
+6. Chunk and embed content
+7. Store in pgvector
+8. Retrieve as citation-grounded evidence
+9. Use evidence in the multi-agent investigation workflow
+
+```mermaid
+flowchart TD
+    A["Uploaded File"] --> B["File Type Detection"]
+    B --> C{"Evidence Type"}
+    C --> D["Image Extractor"]
+    C --> E["PDF Extractor"]
+    C --> F["Audio Extractor"]
+    D --> G["Extracted Text + Visual Metadata"]
+    E --> H["Extracted Document Text"]
+    F --> I["Transcript"]
+    G --> J["Normalize"]
+    H --> J
+    I --> J
+    J --> K["Chunk"]
+    K --> L["Embed"]
+    L --> M["pgvector"]
+    M --> N["RAG Retrieval"]
+    N --> O["Agent Investigation"]
+```
+
+Supported upload formats:
+
+- images: `.png`, `.jpg`, `.jpeg`, `.webp`
+- documents: `.pdf`, `.md`, `.txt`
+- audio: `.mp3`, `.wav`, `.m4a`
+
+Files are stored in `apps/api/storage/evidence/` for local development and are excluded from Git. The default upload limit is 25 MB and can be changed with `MAX_EVIDENCE_UPLOAD_BYTES`.
+
+Mock mode remains the default:
+
+- image interpretation is deterministic from filename and optional description signals
+- dashboard classification detects healthy, degraded, outage, latency spike, error spike, and resource saturation states
+- voice-note transcription is deterministic and incident-specific
+- PDF text extraction uses `pypdf` and returns a safe fallback message when extraction is unavailable or the document has no readable text
+- deterministic embeddings keep processing and retrieval operational without paid APIs
+
+The provider boundaries are intentionally swappable:
+
+- `ImageExtractionProvider` can be extended with a HuggingFace image-to-text or vision-language adapter
+- `AudioTranscriptionProvider` can be extended with a HuggingFace automatic speech recognition adapter
+- the existing retrieval layer provides visual document retrieval and document question answering over extracted screenshot and PDF chunks
+
+Multimodal evidence appears in:
+
+- `/evidence` with upload progress, extraction status, processing status, embedding status, media preview, extracted text, classification, and citations
+- `/incidents/[id]` with evidence-use status for the latest investigation
+- retrieval results with image, document, transcript, or terminal source badges
+- generated reports under `### Multimodal Evidence`
 
 ## Investigation Workflow
 
@@ -287,7 +354,9 @@ pnpm dev
 - `DELETE /api/incidents/{incident_id}`
 - `GET /api/incidents/{incident_id}/evidence`
 - `POST /api/incidents/{incident_id}/evidence`
+- `POST /api/incidents/{incident_id}/evidence/upload`
 - `DELETE /api/evidence/{evidence_id}`
+- `GET /api/evidence/{evidence_id}/file`
 - `POST /api/evidence/{evidence_id}/process`
 - `POST /api/incidents/{incident_id}/evidence/process-all`
 - `GET /api/incidents/{incident_id}/chunks`
@@ -329,6 +398,32 @@ curl http://localhost:8000/api/incidents/1/report
 curl http://localhost:8000/api/incidents/1/trace
 ```
 
+### Test a multimodal upload locally
+
+```bash
+curl -X POST http://localhost:8000/api/incidents/1/evidence/upload \
+  -F "file=@/absolute/path/to/grafana-payment-errors.png" \
+  -F "title=Grafana payment error spike screenshot" \
+  -F "description=Payment dashboard captured during the v1.42.0 incident" \
+  -F "process_immediately=true"
+
+curl -X POST http://localhost:8000/api/retrieval/search \
+  -H "Content-Type: application/json" \
+  -d '{
+    "incident_id": 1,
+    "query": "What did the Grafana screenshot show about payment errors?",
+    "source_types": ["dashboard_screenshot"],
+    "top_k": 8,
+    "score_threshold": 0
+  }'
+```
+
+Run the focused backend tests and production frontend build:
+
+```bash
+make test
+```
+
 ## Demo Walkthrough
 
 Use this flow for a clean local product demo:
@@ -360,6 +455,7 @@ Additional project notes live in:
 - `docs/agent-design.md`
 - `docs/eval-design.md`
 - `docs/llmops.md`
+- `docs/multimodal-design.md`
 
 ## Expected Investigation Outcome
 

@@ -9,23 +9,45 @@ class RootCauseAgent(BaseAgent):
     prompt_file = "root_cause_agent_v1.yaml"
 
     async def execute(self, state: InvestigationState) -> InvestigationState:
+        supporting_sources = {
+            "sentry_issue",
+            "github_pr",
+            "prometheus_metric",
+            "runbook",
+            "previous_incident",
+            "dashboard_screenshot",
+            "sentry_screenshot",
+            "voice_note",
+            "pdf_runbook",
+            "pdf_postmortem",
+        }
+        supporting_citations = [
+            item.citation_id for item in state.evidence_bundle if item.source_type in supporting_sources
+        ]
+        outage_citations = [
+            item.citation_id for item in state.evidence_bundle if item.source_type == "statuspage"
+        ]
         state.hypotheses = [
             RootCauseHypothesis(
                 title="Webhook validation regression",
-                confidence=0.86,
-                supporting_evidence=["EVID-001", "EVID-002", "EVID-003", "EVID-004", "EVID-005"],
-                contradicting_evidence=["EVID-006"],
+                confidence=0.91 if any(
+                    item.source_type in {"dashboard_screenshot", "sentry_screenshot", "voice_note"}
+                    for item in state.evidence_bundle
+                ) else 0.86,
+                supporting_evidence=supporting_citations,
+                contradicting_evidence=outage_citations,
                 reasoning_summary=(
                     "The error spike began shortly after PR #482 changed webhook signature validation. "
                     "Sentry reports SignatureMismatchError in payments/webhook.py for release v1.42.0, "
-                    "and the runbook plus previous incident point to strict validation as a known failure mode."
+                    "while the Grafana and Sentry screenshots plus war-room voice note independently align "
+                    "the production degradation with the same deployment window."
                 ),
             ),
             RootCauseHypothesis(
                 title="Third-party payment provider outage",
                 confidence=0.18,
                 supporting_evidence=[],
-                contradicting_evidence=["EVID-006"],
+                contradicting_evidence=outage_citations,
                 reasoning_summary="The payment provider statuspage reports operational status, reducing the likelihood of an external provider outage.",
             ),
         ]

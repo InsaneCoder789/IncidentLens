@@ -59,6 +59,12 @@ export type EvidenceProcessResponse = {
   embedding_status: string;
 };
 
+export type EvidenceUploadResponse = {
+  evidence: EvidenceItem;
+  processing: EvidenceProcessResponse | null;
+  upload_status: "uploaded" | "processed";
+};
+
 export type ProcessAllEvidenceResponse = {
   incident_id: number;
   processed: number;

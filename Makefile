@@ -1,4 +1,4 @@
-.PHONY: setup dev dev-web dev-api seed seed-api docker-up docker-down
+.PHONY: setup dev dev-web dev-api seed seed-api test test-api test-web docker-up docker-down
 
 PYTHON=.venv/bin/python
 UVICORN=.venv/bin/uvicorn
@@ -21,6 +21,14 @@ seed-api:
 	cd apps/api && ../../$(PYTHON) -m app.seed.demo
 
 seed: seed-api
+
+test-api:
+	cd apps/api && ../../$(PYTHON) -m pytest -q
+
+test-web:
+	cd apps/web && ./node_modules/.bin/tsc --noEmit && ./node_modules/.bin/next build
+
+test: test-api test-web
 
 docker-up:
 	docker compose up --build

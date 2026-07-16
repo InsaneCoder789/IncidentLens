@@ -2,6 +2,7 @@ import { IntegrationHealthPanel } from "@/components/integration-health-panel";
 import { ChunkList, RetrievalResults, SemanticSearchPanel, VectorIndexStatusCard } from "@/components/evidence-citation";
 import { EmbeddingStatusBadge, ProcessingStatusBadge, SourceTypeBadge } from "@/components/evidence-citation";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { MultimodalEvidenceCard, MultimodalUploadPanel } from "@/components/multimodal-evidence";
 import { getIncidentChunks, getIncidentEvidence, getIntegrationHealth, searchEvidence } from "@/lib/api";
 
 export default async function EvidencePage() {
@@ -13,12 +14,26 @@ export default async function EvidencePage() {
   ]);
 
   const chunkCounts = new Map<number, number>();
+  const citationIds = new Map<number, string[]>();
   for (const chunk of chunks) {
     chunkCounts.set(chunk.evidence_item_id, (chunkCounts.get(chunk.evidence_item_id) ?? 0) + 1);
+    citationIds.set(chunk.evidence_item_id, [...(citationIds.get(chunk.evidence_item_id) ?? []), chunk.citation_id]);
   }
+  const multimodalSourceTypes = new Set([
+    "screenshot",
+    "dashboard_screenshot",
+    "sentry_screenshot",
+    "architecture_diagram",
+    "pdf_runbook",
+    "pdf_postmortem",
+    "voice_note",
+  ]);
+  const multimodalEvidence = evidence.filter((item) => multimodalSourceTypes.has(item.source_type));
 
   return (
     <div className="space-y-4">
+      <MultimodalUploadPanel incidentId={1} />
+
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-3">
           <div>
@@ -29,6 +44,28 @@ export default async function EvidencePage() {
         </div>
         <VectorIndexStatusCard />
       </div>
+
+      <Card>
+        <CardHeader>
+          <div>
+            <div className="text-sm font-medium text-white">Multimodal Evidence</div>
+            <div className="mt-1 text-xs text-slate-500">Screenshots, PDFs, and voice notes extracted into citation-grounded RAG evidence.</div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {multimodalEvidence.length ? (
+            <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
+              {multimodalEvidence.map((item) => (
+                <MultimodalEvidenceCard key={item.id} evidence={item} citationIds={citationIds.get(item.id)} />
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-dashed border-line px-4 py-8 text-center text-xs text-slate-500">
+              Upload a screenshot, PDF, or voice note to begin multimodal extraction.
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
         <Card>

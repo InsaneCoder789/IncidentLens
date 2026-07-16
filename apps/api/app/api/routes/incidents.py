@@ -1,15 +1,29 @@
 import asyncio
+import re
+from pathlib import Path
+from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.agents.orchestrator import get_incident_trace, get_latest_report, run_investigation
 from app.db.session import get_db
-from app.schemas.evidence import EvidenceChunkRead, EvidenceItemCreate, EvidenceItemRead, ProcessAllEvidenceResponse
+from app.core.config import get_settings
+from app.schemas.evidence import (
+    EVIDENCE_SOURCE_TYPES,
+    EvidenceChunkRead,
+    EvidenceItemCreate,
+    EvidenceItemRead,
+    EvidenceProcessResponse,
+    EvidenceUploadResponse,
+    ProcessAllEvidenceResponse,
+)
 from app.schemas.incident import IncidentCreate, IncidentRead, IncidentUpdate
 from app.schemas.investigation import AgentRunRead, IncidentReportRead, IncidentTraceRead, InvestigationStartResponse, ToolCallRead
-from app.services.evidence_processing_service import process_all_evidence_for_incident
+from app.services.evidence_processing_service import process_all_evidence_for_incident, process_evidence_item
 from app.services.evidence_service import list_evidence, create_evidence, list_incident_chunks
+from app.services.evidence_storage import evidence_storage_root
+from app.services.multimodal_extraction_service import MultimodalExtractionService, infer_source_type
 from app.services.incident_service import (
     create_incident,
     delete_incident,
@@ -20,6 +34,13 @@ from app.services.incident_service import (
 )
 
 router = APIRouter(prefix="/api/incidents", tags=["incidents"])
+settings = get_settings()
+
+
+def _safe_filename(filename: str) -> str:
+    base = Path(filename).name
+    sanitized = re.sub(r"[^A-Za-z0-9._-]+", "-", base).strip(".-")
+    return sanitized or "evidence"
 
 
 @router.get("", response_model=list[IncidentRead])
@@ -88,6 +109,107 @@ def create_incident_evidence(incident_id: int, payload: EvidenceItemCreate, db: 
         "embedding_status": evidence.embedding_status,
         "processing_status": evidence.processing_status,
     }
+
+
+@router.post(
+    "/{incident_id}/evidence/upload",
+    response_model=EvidenceUploadResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def upload_incident_evidence(
+    incident_id: int,
+    file: UploadFile = File(...),
+    title: str | None = Form(default=None),
+    description: str = Form(default=""),
+    source_type: str | None = Form(default=None),
+    process_immediately: bool = Form(default=True),
+    db: Session = Depends(get_db),
+) -> EvidenceUploadResponse:
+    incident = get_incident(db, incident_id)
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incident not found")
+
+    filename = _safe_filename(file.filename or "evidence")
+    extension = Path(filename).suffix.lower()
+    allowed_extensions = (
+        MultimodalExtractionService.image_extensions
+        | MultimodalExtractionService.document_extensions
+        | MultimodalExtractionService.audio_extensions
+    )
+    if extension not in allowed_extensions:
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail=f"Unsupported file type. Accepted extensions: {', '.join(sorted(allowed_extensions))}",
+        )
+
+    inferred_source_type = infer_source_type(
+        filename=filename,
+        mime_type=file.content_type or "application/octet-stream",
+        requested_source_type=source_type,
+    )
+    if inferred_source_type not in EVIDENCE_SOURCE_TYPES:
+        raise HTTPException(status_code=422, detail=f"Unsupported evidence source type: {inferred_source_type}")
+
+    relative_dir = Path(settings.evidence_storage_dir) / str(incident_id)
+    absolute_dir = evidence_storage_root() / str(incident_id)
+    absolute_dir.mkdir(parents=True, exist_ok=True)
+    stored_filename = f"{uuid4().hex}-{filename}"
+    relative_path = relative_dir / stored_filename
+    absolute_path = absolute_dir / stored_filename
+
+    size = 0
+    try:
+        with absolute_path.open("wb") as destination:
+            while chunk := await file.read(1024 * 1024):
+                size += len(chunk)
+                if size > settings.max_evidence_upload_bytes:
+                    raise HTTPException(
+                        status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                        detail=f"File exceeds the {settings.max_evidence_upload_bytes // (1024 * 1024)} MB upload limit.",
+                    )
+                destination.write(chunk)
+    except Exception:
+        absolute_path.unlink(missing_ok=True)
+        raise
+    finally:
+        await file.close()
+
+    evidence = create_evidence(
+        db,
+        incident_id,
+        EvidenceItemCreate(
+            source_type=inferred_source_type,
+            title=title or Path(filename).stem.replace("-", " ").replace("_", " ").strip().title(),
+            raw_content=description,
+            metadata_json={
+                "filename": filename,
+                "mime_type": file.content_type or "application/octet-stream",
+                "file_size_bytes": size,
+                "storage_path": relative_path.as_posix(),
+                "extraction_status": "pending",
+                "upload_mode": "local_development_storage",
+            },
+        ),
+    )
+
+    processing = None
+    upload_status = "uploaded"
+    if process_immediately:
+        result = process_evidence_item(db, evidence)
+        processing = EvidenceProcessResponse(
+            evidence_id=result.evidence_id,
+            status=result.status,
+            chunks_created=result.chunks_created,
+            embedding_status=result.embedding_status,
+        )
+        upload_status = "processed"
+
+    db.refresh(evidence)
+    return EvidenceUploadResponse(
+        evidence=EvidenceItemRead.model_validate(evidence),
+        processing=processing,
+        upload_status=upload_status,
+    )
 
 
 @router.post("/{incident_id}/evidence/process-all", response_model=ProcessAllEvidenceResponse)

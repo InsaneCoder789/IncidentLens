@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import uuid4
 
 from sqlalchemy import DateTime, Float, ForeignKey, Integer, JSON, String, Text
@@ -22,7 +22,7 @@ class IncidentReport(Base):
     selected_root_cause: Mapped[str] = mapped_column(String(255), nullable=False)
     confidence_score: Mapped[float] = mapped_column(Float, nullable=False)
     evaluation_score: Mapped[float] = mapped_column(Float, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False)
 
     incident = relationship("Incident", back_populates="reports")
 
@@ -42,7 +42,7 @@ class AgentRun(Base):
     token_input: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     token_output: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     estimated_cost_usd: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
-    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
 
@@ -61,7 +61,7 @@ class ToolCall(Base):
     input_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
     output_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
     latency_ms: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     agent_run = relationship("AgentRun", back_populates="tool_calls")
@@ -77,7 +77,7 @@ class ModelRun(Base):
     token_input: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     token_output: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     estimated_cost_usd: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False)
 
     agent_run = relationship("AgentRun", back_populates="model_runs")
 
@@ -90,7 +90,7 @@ class PromptVersion(Base):
     version: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False, default="")
     template: Mapped[str] = mapped_column(Text, nullable=False, default="")
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False)
 
 
 class EvalRun(Base):
@@ -109,4 +109,4 @@ class EvalRun(Base):
     avg_cost_usd: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     summary_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
     failed_cases_json: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False)

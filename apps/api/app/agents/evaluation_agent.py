@@ -15,14 +15,31 @@ class EvaluationAgent(BaseAgent):
                 if "rollback" in action.lower() or "disable" in action.lower():
                     unsafe.append(action)
 
+        multimodal_items = [
+            item
+            for item in state.evidence_bundle
+            if item.source_type
+            in {
+                "screenshot",
+                "dashboard_screenshot",
+                "sentry_screenshot",
+                "architecture_diagram",
+                "pdf_runbook",
+                "pdf_postmortem",
+                "voice_note",
+            }
+        ]
+        unsupported_multimodal = [
+            f"{item.citation_id} has no extracted content" for item in multimodal_items if not item.content.strip()
+        ]
         state.evaluation = EvaluationResult(
             quality_score=0.9,
             citation_coverage=0.94,
-            unsupported_claims=[],
+            unsupported_claims=unsupported_multimodal,
             unsafe_recommendations=unsafe,
             missing_evidence=state.missing_evidence,
             notes=(
-                "The report is well supported by GitHub, Sentry, Prometheus, runbook, and previous incident evidence. "
+                "The report is supported by text, screenshot, dashboard, and voice-note evidence with extracted content. "
                 "Production-changing actions are correctly approval-gated."
             ),
         )

@@ -2,6 +2,7 @@ import type {
   EvidenceChunk,
   EvidenceItem,
   EvidenceProcessResponse,
+  EvidenceUploadResponse,
   EvalRun,
   EvalRunTriggerResponse,
   IncidentReport,
@@ -28,14 +29,15 @@ import {
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const API_TIMEOUT_MS = 1200;
 
-async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
+async function requestJson<T>(path: string, init?: RequestInit, timeoutMs = API_TIMEOUT_MS): Promise<T> {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  const isFormData = typeof FormData !== "undefined" && init?.body instanceof FormData;
   try {
     const response = await fetch(`${API_URL}${path}`, {
       ...init,
       headers: {
-        "Content-Type": "application/json",
+        ...(isFormData ? {} : { "Content-Type": "application/json" }),
         ...(init?.headers ?? {}),
       },
       cache: "no-store",
@@ -107,6 +109,60 @@ export async function processEvidence(evidenceId: number): Promise<EvidenceProce
       embedding_status: "completed",
     };
   }
+}
+
+export async function uploadEvidence(
+  incidentId: number,
+  file: File,
+  options?: {
+    title?: string;
+    description?: string;
+    sourceType?: string;
+    processImmediately?: boolean;
+    onProgress?: (progress: number) => void;
+  },
+): Promise<EvidenceUploadResponse> {
+  const formData = new FormData();
+  formData.append("file", file);
+  if (options?.title) formData.append("title", options.title);
+  if (options?.description) formData.append("description", options.description);
+  if (options?.sourceType) formData.append("source_type", options.sourceType);
+  formData.append("process_immediately", String(options?.processImmediately ?? true));
+  if (typeof XMLHttpRequest === "undefined") {
+    return requestJson<EvidenceUploadResponse>(
+      `/api/incidents/${incidentId}/evidence/upload`,
+      { method: "POST", body: formData },
+      30_000,
+    );
+  }
+  return new Promise((resolve, reject) => {
+    const request = new XMLHttpRequest();
+    request.open("POST", `${API_URL}/api/incidents/${incidentId}/evidence/upload`);
+    request.timeout = 30_000;
+    request.upload.onprogress = (event) => {
+      if (event.lengthComputable) options?.onProgress?.(Math.round((event.loaded / event.total) * 90));
+    };
+    request.onload = () => {
+      if (request.status >= 200 && request.status < 300) {
+        options?.onProgress?.(100);
+        resolve(JSON.parse(request.responseText) as EvidenceUploadResponse);
+        return;
+      }
+      try {
+        const payload = JSON.parse(request.responseText) as { detail?: string };
+        reject(new Error(payload.detail ?? `Upload failed: ${request.status}`));
+      } catch {
+        reject(new Error(`Upload failed: ${request.status}`));
+      }
+    };
+    request.onerror = () => reject(new Error("Could not reach the evidence API."));
+    request.ontimeout = () => reject(new Error("Evidence processing timed out."));
+    request.send(formData);
+  });
+}
+
+export function evidenceFileUrl(evidenceId: number): string {
+  return `${API_URL}/api/evidence/${evidenceId}/file`;
 }
 
 export async function processAllEvidence(incidentId: number): Promise<ProcessAllEvidenceResponse> {

@@ -17,6 +17,9 @@ class RetrievalAgent(BaseAgent):
             "recent deployment webhook validation PR payment_webhook_strict_mode",
             "Prometheus error spike payment completion rate latency",
             "previous incident strict validation SignatureMismatchError",
+            "Grafana screenshot payment errors release v1.42.0",
+            "Sentry screenshot SignatureMismatchError webhook validation",
+            "voice note webhook deployment payment_webhook_strict_mode",
         ]
         bundled: dict[str, EvidenceBundleItem] = {}
         for query in queries:
@@ -34,7 +37,7 @@ class RetrievalAgent(BaseAgent):
                     metadata=result.metadata,
                 )
         state.evidence_bundle = sorted(bundled.values(), key=lambda item: item.relevance_score, reverse=True)
-        state.missing_evidence = ["exact rollback result", "feature flag state at incident start"]
+        state.missing_evidence = ["exact rollback result", "feature flag state at incident start", "PDF rollback checklist confirmation"]
         return state
 
     def output_summary(self, state: InvestigationState) -> str:

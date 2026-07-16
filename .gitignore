@@ -19,3 +19,5 @@ coverage
 work/
 outputs/qa/
 .playwright-mcp/
+apps/api/storage/evidence/*
+!apps/api/storage/evidence/.gitkeep

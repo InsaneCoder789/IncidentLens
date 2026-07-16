@@ -9,6 +9,8 @@ from app.models.evidence import EvidenceChunk, EvidenceItem
 from app.rag.chunker import chunk_evidence, citation_id_for_position
 from app.rag.embeddings import get_embedding_provider
 from app.services.evidence_normalizer import normalize_evidence_content
+from app.services.evidence_storage import resolve_evidence_storage_path
+from app.services.multimodal_extraction_service import MultimodalExtractionService
 
 
 @dataclass(slots=True)
@@ -44,6 +46,33 @@ def process_evidence_item(db: Session, evidence_item: EvidenceItem) -> EvidenceP
     provider = get_embedding_provider()
 
     try:
+        metadata = dict(evidence_item.metadata_json or {})
+        storage_path = metadata.get("storage_path")
+        if storage_path and metadata.get("extraction_status") != "completed":
+            metadata["extraction_status"] = "processing"
+            evidence_item.metadata_json = dict(metadata)
+            db.add(evidence_item)
+            db.flush()
+
+            absolute_path = resolve_evidence_storage_path(str(storage_path))
+            extraction = MultimodalExtractionService().extract(
+                path=absolute_path,
+                mime_type=str(metadata.get("mime_type", "application/octet-stream")),
+                description=evidence_item.raw_content,
+            )
+            metadata.update(extraction.metadata)
+            metadata.update(
+                {
+                    "extraction_status": "completed",
+                    "extraction_summary": extraction.summary,
+                    "detected_type": extraction.detected_type,
+                    "extraction_confidence": extraction.confidence,
+                    "extraction_warnings": extraction.warnings,
+                }
+            )
+            evidence_item.raw_content = extraction.extracted_text
+            evidence_item.metadata_json = dict(metadata)
+
         evidence_item.processing_status = "normalized"
         evidence_item.embedding_status = "processing"
         evidence_item.normalized_content = normalize_evidence_content(evidence_item)
@@ -87,8 +116,12 @@ def process_evidence_item(db: Session, evidence_item: EvidenceItem) -> EvidenceP
             chunks_created=created,
             embedding_status=evidence_item.embedding_status,
         )
-    except Exception:
+    except Exception as exc:
         db.rollback()
+        metadata = dict(evidence_item.metadata_json or {})
+        metadata["extraction_status"] = "failed"
+        metadata["extraction_error"] = str(exc)
+        evidence_item.metadata_json = dict(metadata)
         evidence_item.processing_status = "failed"
         evidence_item.embedding_status = "failed"
         db.add(evidence_item)

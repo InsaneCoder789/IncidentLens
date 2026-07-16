@@ -83,23 +83,60 @@ export function InvestigationStatusPanel({
 }
 
 
-export function MarkdownReport({ markdown }: { markdown: string }) {
+function CitationSourceBadges({
+  line,
+  citationSourceTypes,
+}: {
+  line: string;
+  citationSourceTypes: Record<string, string>;
+}) {
+  const citationIds = Array.from(line.matchAll(/\[(EVID-\d+)\]/g), (match) => match[1]);
+  const multimodal = citationIds.filter((citationId) => {
+    const sourceType = citationSourceTypes[citationId];
+    return ["screenshot", "dashboard_screenshot", "sentry_screenshot", "architecture_diagram", "pdf_runbook", "pdf_postmortem", "voice_note"].includes(sourceType);
+  });
+  if (!multimodal.length) return null;
+  return (
+    <span className="ml-2 inline-flex flex-wrap gap-1 align-middle">
+      {multimodal.map((citationId) => (
+        <Badge key={citationId} className="border-[#568dff]/30 bg-[#568dff1a] font-mono text-[9px] text-[#b0c6ff]">
+          {citationSourceTypes[citationId]?.replaceAll("_", " ")}
+        </Badge>
+      ))}
+    </span>
+  );
+}
+
+export function MarkdownReport({
+  markdown,
+  citationSourceTypes = {},
+}: {
+  markdown: string;
+  citationSourceTypes?: Record<string, string>;
+}) {
   const lines = markdown.split("\n");
   return (
     <div className="space-y-2">
       {lines.map((line, index) => {
         if (line.startsWith("# ")) return <h1 key={index} className="text-xl font-semibold text-white">{line.slice(2)}</h1>;
         if (line.startsWith("## ")) return <h2 key={index} className="pt-2 text-sm font-semibold uppercase tracking-[0.08em] text-[#b0c6ff]">{line.slice(3)}</h2>;
-        if (line.startsWith("- ")) return <div key={index} className="flex gap-2 text-sm text-slate-300"><span className="mt-2 h-1.5 w-1.5 rounded-full bg-[#568dff]" /><span>{line.slice(2)}</span></div>;
+        if (line.startsWith("### ")) return <h3 key={index} className="pt-2 text-xs font-semibold uppercase tracking-[0.08em] text-[#ffb86b]">{line.slice(4)}</h3>;
+        if (line.startsWith("- ")) return <div key={index} className="flex gap-2 text-sm text-slate-300"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#568dff]" /><span>{line.slice(2)}<CitationSourceBadges line={line} citationSourceTypes={citationSourceTypes} /></span></div>;
         if (!line.trim()) return <div key={index} className="h-2" />;
-        return <p key={index} className="text-sm leading-6 text-slate-300">{line}</p>;
+        return <p key={index} className="text-sm leading-6 text-slate-300">{line}<CitationSourceBadges line={line} citationSourceTypes={citationSourceTypes} /></p>;
       })}
     </div>
   );
 }
 
 
-export function IncidentReportViewer({ report }: { report?: IncidentReport }) {
+export function IncidentReportViewer({
+  report,
+  citationSourceTypes = {},
+}: {
+  report?: IncidentReport;
+  citationSourceTypes?: Record<string, string>;
+}) {
   return (
     <Card>
       <CardHeader>
@@ -112,7 +149,7 @@ export function IncidentReportViewer({ report }: { report?: IncidentReport }) {
         </div>
       </CardHeader>
       <CardContent>
-        {report ? <MarkdownReport markdown={report.report_markdown} /> : <div className="text-sm text-slate-500">No report generated yet.</div>}
+        {report ? <MarkdownReport markdown={report.report_markdown} citationSourceTypes={citationSourceTypes} /> : <div className="text-sm text-slate-500">No report generated yet.</div>}
       </CardContent>
     </Card>
   );
@@ -286,10 +323,12 @@ export function InvestigationWorkspace({
   incidentId,
   initialReport,
   initialTrace,
+  citationSourceTypes = {},
 }: {
   incidentId: number;
   initialReport?: IncidentReport;
   initialTrace: IncidentTrace;
+  citationSourceTypes?: Record<string, string>;
 }) {
   const [report, setReport] = useState<IncidentReport | undefined>(initialReport);
   const [trace, setTrace] = useState<IncidentTrace>(initialTrace);
@@ -317,7 +356,7 @@ export function InvestigationWorkspace({
       {loading ? <InvestigationLoadingState /> : null}
       {error ? <InvestigationErrorState title="Investigation Error" description={error} /> : null}
       <InvestigationStatusPanel report={report} trace={trace} />
-      <IncidentReportViewer report={report} />
+      <IncidentReportViewer report={report} citationSourceTypes={citationSourceTypes} />
       <ApprovalGatedActionsPanel report={report} />
       <MissingEvidencePanel report={report} />
     </div>

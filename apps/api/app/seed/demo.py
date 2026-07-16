@@ -153,6 +153,95 @@ def seed_demo() -> None:
             ]
             db.add_all(demo_evidence)
             db.commit()
+
+        existing_titles = {item.title for item in incident.evidence_items}
+        multimodal_evidence = [
+            EvidenceItem(
+                incident_id=incident.id,
+                source_type="dashboard_screenshot",
+                title="Grafana payment error spike screenshot",
+                raw_content=(
+                    "Grafana dashboard shows payments-api error rate rising sharply after release v1.42.0. "
+                    "The 5xx panel indicates an increase from baseline to roughly 18%. "
+                    "p95 latency also rises during the same time window."
+                ),
+                normalized_content=None,
+                metadata_json={
+                    "filename": "grafana-payment-errors.png",
+                    "mime_type": "image/png",
+                    "file_size_bytes": 184320,
+                    "extraction_status": "completed",
+                    "detected_type": "dashboard_screenshot",
+                    "extraction_confidence": 0.88,
+                    "dashboard_classification": {
+                        "classification": "error_spike",
+                        "confidence": 0.86,
+                        "signals": ["5xx indicator detected", "payment service visible", "critical chart region inferred"],
+                    },
+                    "service": "payments-api",
+                    "release": "v1.42.0",
+                    "seeded_multimodal": True,
+                },
+                embedding_status="pending",
+                processing_status="uploaded",
+            ),
+            EvidenceItem(
+                incident_id=incident.id,
+                source_type="sentry_screenshot",
+                title="Sentry SignatureMismatchError screenshot",
+                raw_content=(
+                    "Sentry screenshot shows SignatureMismatchError in payments/webhook.py for release v1.42.0, "
+                    "matching the payment webhook validation failure path."
+                ),
+                normalized_content=None,
+                metadata_json={
+                    "filename": "sentry-signature-mismatch.png",
+                    "mime_type": "image/png",
+                    "file_size_bytes": 143360,
+                    "extraction_status": "completed",
+                    "detected_type": "dashboard_screenshot",
+                    "extraction_confidence": 0.91,
+                    "dashboard_classification": {
+                        "classification": "error_spike",
+                        "confidence": 0.86,
+                        "signals": ["sentry indicator detected", "signaturemismatch indicator detected"],
+                    },
+                    "service": "payments-api",
+                    "release": "v1.42.0",
+                    "seeded_multimodal": True,
+                },
+                embedding_status="pending",
+                processing_status="uploaded",
+            ),
+            EvidenceItem(
+                incident_id=incident.id,
+                source_type="voice_note",
+                title="Incident war room voice note",
+                raw_content=(
+                    "Transcribed voice note:\nThe payment failures started after the webhook validation deployment. "
+                    "The team should check payment_webhook_strict_mode and compare the webhook success rate before and after v1.42.0."
+                ),
+                normalized_content=None,
+                metadata_json={
+                    "filename": "payment-war-room-voice-note.m4a",
+                    "mime_type": "audio/mp4",
+                    "file_size_bytes": 512000,
+                    "extraction_status": "completed",
+                    "detected_type": "voice_note",
+                    "extraction_confidence": 0.87,
+                    "provider": "MockAudioTranscriptionProvider",
+                    "service": "payments-api",
+                    "release": "v1.42.0",
+                    "seeded_multimodal": True,
+                },
+                embedding_status="pending",
+                processing_status="uploaded",
+            ),
+        ]
+        missing_multimodal = [item for item in multimodal_evidence if item.title not in existing_titles]
+        if missing_multimodal:
+            db.add_all(missing_multimodal)
+            db.commit()
     finally:
         db.close()
 

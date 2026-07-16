@@ -5,6 +5,20 @@ from app.agents.state import InvestigationState
 
 def build_report_markdown(state: InvestigationState) -> str:
     evidence_lines = [f"- [{item.citation_id}] {item.title}: {item.content}" for item in state.evidence_bundle[:8]]
+    multimodal_types = {
+        "screenshot",
+        "dashboard_screenshot",
+        "sentry_screenshot",
+        "architecture_diagram",
+        "pdf_runbook",
+        "pdf_postmortem",
+        "voice_note",
+    }
+    multimodal_items = [item for item in state.evidence_bundle if item.source_type in multimodal_types]
+    multimodal_lines = [
+        f"- [{item.citation_id}] ({item.source_type}) {item.title}: {item.content}"
+        for item in multimodal_items[:6]
+    ]
     hypothesis_lines = [
         f"- {item.title} ({item.confidence:.2f}) support={', '.join(item.supporting_evidence)} contradict={', '.join(item.contradicting_evidence) or 'none'}: {item.reasoning_summary}"
         for item in state.hypotheses
@@ -30,6 +44,8 @@ def build_report_markdown(state: InvestigationState) -> str:
             "- Prometheus captured a sharp error and latency spike [EVID-003]",
             "## 6. Key Evidence",
             *evidence_lines,
+            "### Multimodal Evidence",
+            *(multimodal_lines or ["- No multimodal evidence was available for this investigation."]),
             "## 7. Root Cause Hypotheses",
             *hypothesis_lines,
             "## 8. Most Likely Root Cause",

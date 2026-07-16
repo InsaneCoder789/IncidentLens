@@ -1,5 +1,28 @@
 from datetime import datetime
-from pydantic import BaseModel, ConfigDict, Field
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+
+EVIDENCE_SOURCE_TYPES = {
+    "log",
+    "runbook",
+    "postmortem",
+    "github_pr",
+    "github_commit",
+    "sentry_issue",
+    "prometheus_metric",
+    "statuspage",
+    "screenshot",
+    "dashboard_screenshot",
+    "sentry_screenshot",
+    "architecture_diagram",
+    "pdf_runbook",
+    "pdf_postmortem",
+    "slack_note",
+    "voice_note",
+    "previous_incident",
+}
 
 
 class EvidenceItemBase(BaseModel):
@@ -10,6 +33,13 @@ class EvidenceItemBase(BaseModel):
     metadata_json: dict = Field(default_factory=dict)
     embedding_status: str = "pending"
     processing_status: str = "uploaded"
+
+    @field_validator("source_type")
+    @classmethod
+    def validate_source_type(cls, value: str) -> str:
+        if value not in EVIDENCE_SOURCE_TYPES:
+            raise ValueError(f"Unsupported evidence source type: {value}")
+        return value
 
 
 class EvidenceItemCreate(EvidenceItemBase):
@@ -48,3 +78,9 @@ class ProcessAllEvidenceResponse(BaseModel):
     processed: int
     failed: int
     chunks_created: int
+
+
+class EvidenceUploadResponse(BaseModel):
+    evidence: EvidenceItemRead
+    processing: EvidenceProcessResponse | None = None
+    upload_status: Literal["uploaded", "processed"]

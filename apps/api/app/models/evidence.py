@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import DateTime, Enum, ForeignKey, Integer, JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -25,6 +25,11 @@ class EvidenceItem(Base):
             "prometheus_metric",
             "statuspage",
             "screenshot",
+            "dashboard_screenshot",
+            "sentry_screenshot",
+            "architecture_diagram",
+            "pdf_runbook",
+            "pdf_postmortem",
             "slack_note",
             "voice_note",
             "previous_incident",
@@ -36,7 +41,7 @@ class EvidenceItem(Base):
     raw_content: Mapped[str] = mapped_column(Text, nullable=False)
     normalized_content: Mapped[str | None] = mapped_column(Text, nullable=True)
     metadata_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False)
     embedding_status: Mapped[str] = mapped_column(
         Enum("pending", "processing", "completed", "failed", name="embedding_status"),
         nullable=False,
@@ -64,6 +69,6 @@ class EvidenceChunk(Base):
     embedding: Mapped[list[float] | None] = mapped_column(JSON().with_variant(Vector(384), "postgresql"), nullable=True)
     token_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     metadata_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False)
 
     evidence_item = relationship("EvidenceItem", back_populates="chunks")

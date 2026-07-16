@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
@@ -6,6 +7,7 @@ from app.models.evidence import EvidenceItem
 from app.schemas.evidence import EvidenceProcessResponse
 from app.services.evidence_processing_service import process_evidence_item
 from app.services.evidence_service import delete_evidence
+from app.services.evidence_storage import resolve_evidence_storage_path
 
 router = APIRouter(prefix="/api", tags=["evidence"])
 
@@ -29,4 +31,26 @@ def process_evidence(evidence_id: int, db: Session = Depends(get_db)) -> Evidenc
         status=result.status,
         chunks_created=result.chunks_created,
         embedding_status=result.embedding_status,
+    )
+
+
+@router.get("/evidence/{evidence_id}/file")
+def read_evidence_file(evidence_id: int, db: Session = Depends(get_db)) -> FileResponse:
+    evidence = db.get(EvidenceItem, evidence_id)
+    if not evidence:
+        raise HTTPException(status_code=404, detail="Evidence not found")
+    metadata = evidence.metadata_json or {}
+    storage_path = metadata.get("storage_path")
+    if not storage_path:
+        raise HTTPException(status_code=404, detail="Evidence has no uploaded file")
+    try:
+        absolute_path = resolve_evidence_storage_path(str(storage_path))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    if not absolute_path.is_file():
+        raise HTTPException(status_code=404, detail="Stored evidence file not found")
+    return FileResponse(
+        absolute_path,
+        media_type=str(metadata.get("mime_type", "application/octet-stream")),
+        filename=str(metadata.get("filename", absolute_path.name)),
     )

@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -10,6 +12,7 @@ from app.api.routes.llmops import router as llmops_router
 from app.api.routes.retrieval import router as retrieval_router
 from app.core.logging import configure_logging
 from app.db.session import engine
+from app.db.schema_compat import ensure_multimodal_source_types
 from app.models import investigation as _investigation_models  # noqa: F401
 from app.models import incident as _incident_models  # noqa: F401
 from app.models import evidence as _evidence_models  # noqa: F401
@@ -18,8 +21,15 @@ from app.seed.demo import seed_demo
 
 configure_logging()
 
-app = FastAPI(title="IncidentLens AI API", version="0.1.0")
 
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    ensure_multimodal_source_types(engine)
+    Base.metadata.create_all(bind=engine)
+    seed_demo()
+    yield
+
+app = FastAPI(title="IncidentLens AI API", version="0.1.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -35,12 +45,6 @@ app.include_router(evals_router)
 app.include_router(integrations_router)
 app.include_router(llmops_router)
 app.include_router(retrieval_router)
-
-
-@app.on_event("startup")
-def on_startup() -> None:
-    Base.metadata.create_all(bind=engine)
-    seed_demo()
 
 
 @app.get("/")

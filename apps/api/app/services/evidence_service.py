@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.models.evidence import EvidenceChunk, EvidenceItem
 from app.schemas.evidence import EvidenceItemCreate
+from app.services.evidence_storage import resolve_evidence_storage_path
 
 
 def list_evidence(db: Session, incident_id: int) -> list[EvidenceItem]:
@@ -18,8 +19,14 @@ def create_evidence(db: Session, incident_id: int, payload: EvidenceItemCreate) 
 
 
 def delete_evidence(db: Session, evidence: EvidenceItem) -> None:
+    storage_path = (evidence.metadata_json or {}).get("storage_path")
     db.delete(evidence)
     db.commit()
+    if storage_path:
+        try:
+            resolve_evidence_storage_path(str(storage_path)).unlink(missing_ok=True)
+        except ValueError:
+            pass
 
 
 def list_chunks(db: Session, evidence_item_id: int) -> list[EvidenceChunk]:

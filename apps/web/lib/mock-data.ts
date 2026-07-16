@@ -41,7 +41,7 @@ export const incidents: Incident[] = [
     created_at: "2026-07-02T06:12:00Z",
     updated_at: "2026-07-02T06:29:00Z",
     resolved_at: null,
-    evidence_count: 6,
+    evidence_count: 9,
   },
   {
     id: 2,
@@ -174,6 +174,74 @@ export const evidence: EvidenceItem[] = [
     embedding_status: "completed",
     processing_status: "embedded",
   },
+  {
+    id: 107,
+    incident_id: 1,
+    source_type: "dashboard_screenshot",
+    title: "Grafana payment error spike screenshot",
+    raw_content:
+      "Grafana dashboard shows payments-api error rate rising sharply after release v1.42.0. The 5xx panel rises to roughly 18% and p95 latency increases.",
+    normalized_content:
+      "Grafana payment error spike screenshot\n\nGrafana dashboard shows payments-api error rate rising sharply after release v1.42.0. The 5xx panel rises to roughly 18% and p95 latency increases.",
+    metadata_json: {
+      filename: "grafana-payment-errors.png",
+      mime_type: "image/png",
+      file_size_bytes: 184320,
+      extraction_status: "completed",
+      dashboard_classification: {
+        classification: "error_spike",
+        confidence: 0.86,
+        signals: ["5xx indicator detected", "payment service visible"],
+      },
+    },
+    created_at: "2026-07-02T06:22:00Z",
+    embedding_status: "completed",
+    processing_status: "embedded",
+  },
+  {
+    id: 108,
+    incident_id: 1,
+    source_type: "sentry_screenshot",
+    title: "Sentry SignatureMismatchError screenshot",
+    raw_content:
+      "Sentry screenshot shows SignatureMismatchError in payments/webhook.py for release v1.42.0, matching the payment webhook validation failure path.",
+    normalized_content:
+      "Sentry SignatureMismatchError screenshot\n\nSentry screenshot shows SignatureMismatchError in payments/webhook.py for release v1.42.0.",
+    metadata_json: {
+      filename: "sentry-signature-mismatch.png",
+      mime_type: "image/png",
+      file_size_bytes: 143360,
+      extraction_status: "completed",
+      dashboard_classification: {
+        classification: "error_spike",
+        confidence: 0.86,
+        signals: ["SignatureMismatchError visible", "release v1.42.0 visible"],
+      },
+    },
+    created_at: "2026-07-02T06:23:00Z",
+    embedding_status: "completed",
+    processing_status: "embedded",
+  },
+  {
+    id: 109,
+    incident_id: 1,
+    source_type: "voice_note",
+    title: "Incident war room voice note",
+    raw_content:
+      "Transcribed voice note: The payment failures started after the webhook validation deployment. Check payment_webhook_strict_mode and compare success rates around v1.42.0.",
+    normalized_content:
+      "Incident war room voice note\n\nTranscribed voice note: The payment failures started after the webhook validation deployment. Check payment_webhook_strict_mode.",
+    metadata_json: {
+      filename: "payment-war-room-voice-note.m4a",
+      mime_type: "audio/mp4",
+      file_size_bytes: 512000,
+      extraction_status: "completed",
+      provider: "MockAudioTranscriptionProvider",
+    },
+    created_at: "2026-07-02T06:24:00Z",
+    embedding_status: "completed",
+    processing_status: "embedded",
+  },
 ];
 
 export const incidentChunks: EvidenceChunk[] = [
@@ -209,6 +277,39 @@ export const incidentChunks: EvidenceChunk[] = [
     token_count: 23,
     metadata_json: { evidence_title: "Payment webhook failure runbook" },
     created_at: "2026-07-02T06:22:20Z",
+  },
+  {
+    id: 207,
+    evidence_item_id: 107,
+    incident_id: 1,
+    chunk_index: 0,
+    citation_id: "EVID-007",
+    content: "Grafana shows payments-api 5xx errors rising to roughly 18% with elevated p95 latency after release v1.42.0.",
+    token_count: 25,
+    metadata_json: { source_type: "dashboard_screenshot", dashboard_classification: { classification: "error_spike" } },
+    created_at: "2026-07-02T06:25:00Z",
+  },
+  {
+    id: 208,
+    evidence_item_id: 108,
+    incident_id: 1,
+    chunk_index: 0,
+    citation_id: "EVID-008",
+    content: "Sentry screenshot shows SignatureMismatchError in payments/webhook.py for release v1.42.0.",
+    token_count: 20,
+    metadata_json: { source_type: "sentry_screenshot" },
+    created_at: "2026-07-02T06:25:10Z",
+  },
+  {
+    id: 209,
+    evidence_item_id: 109,
+    incident_id: 1,
+    chunk_index: 0,
+    citation_id: "EVID-009",
+    content: "War-room voice note says failures started after webhook validation deployment and recommends checking payment_webhook_strict_mode.",
+    token_count: 24,
+    metadata_json: { source_type: "voice_note" },
+    created_at: "2026-07-02T06:25:20Z",
   },
 ];
 
@@ -260,6 +361,22 @@ export const evidenceSources: EvidenceSourceSummary[] = [
 ];
 
 export const retrievalResults: RetrievalResult[] = [
+  {
+    citation_id: "EVID-007",
+    source_type: "dashboard_screenshot",
+    title: "Grafana payment error spike screenshot",
+    content: "Grafana shows payments-api errors rising to roughly 18% and elevated p95 latency after v1.42.0.",
+    relevance_score: 0.97,
+    metadata: { dashboard_classification: { classification: "error_spike", confidence: 0.86 } },
+  },
+  {
+    citation_id: "EVID-009",
+    source_type: "voice_note",
+    title: "Incident war room voice note",
+    content: "The team linked failures to the webhook validation deployment and called out payment_webhook_strict_mode.",
+    relevance_score: 0.95,
+    metadata: { provider: "MockAudioTranscriptionProvider" },
+  },
   {
     citation_id: "EVID-001",
     source_type: "sentry_issue",
@@ -418,6 +535,10 @@ high [EVID-003]
 - [EVID-001] SignatureMismatchError in payments/webhook.py
 - [EVID-002] PR #482 changed webhook validation
 - [EVID-003] Payment service error rate spike
+### Multimodal Evidence
+- [EVID-007] (dashboard_screenshot) Grafana shows payments-api errors rising after v1.42.0.
+- [EVID-008] (sentry_screenshot) Sentry shows SignatureMismatchError in payments/webhook.py.
+- [EVID-009] (voice_note) The war-room note links failures to the webhook validation deployment.
 - [EVID-004] Payment webhook failure runbook
 - [EVID-005] INC-104 similar signature mismatch regression
 - [EVID-006] Payment provider status operational

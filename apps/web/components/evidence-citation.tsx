@@ -16,6 +16,7 @@ import type {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { FileTypeBadge } from "@/components/multimodal-evidence";
 
 const SOURCE_TYPE_OPTIONS = [
   "all",
@@ -25,6 +26,12 @@ const SOURCE_TYPE_OPTIONS = [
   "runbook",
   "previous_incident",
   "statuspage",
+  "dashboard_screenshot",
+  "sentry_screenshot",
+  "architecture_diagram",
+  "pdf_runbook",
+  "pdf_postmortem",
+  "voice_note",
 ];
 
 export function CitationBadge({ citationId }: { citationId: string }) {
@@ -80,7 +87,7 @@ export function EvidenceCitation({
           {typeof score === "number" ? (
             <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-[#7ee787]">{Math.round(score * 100)}%</span>
           ) : null}
-          <SourceTypeBadge sourceType={sourceType} />
+          <FileTypeBadge sourceType={sourceType} />
         </div>
       </div>
       <div className="mt-2 text-sm font-medium text-white">{title}</div>

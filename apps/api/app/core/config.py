@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     tracing_enabled: bool = True
     cost_tracking_enabled: bool = True
     prompt_versioning_enabled: bool = True
+    evidence_storage_dir: str = "storage/evidence"
+    max_evidence_upload_bytes: int = 25 * 1024 * 1024
 
 
 @lru_cache

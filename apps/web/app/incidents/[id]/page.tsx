@@ -6,6 +6,7 @@ import { ChunkList, EvidenceCitation, RetrievalStatusStrip, RootCauseHypothesisC
 import { EvidenceCard } from "@/components/evidence-card";
 import { IncidentTimeline } from "@/components/incident-timeline";
 import { InvestigationWorkspace } from "@/components/investigation-ui";
+import { MultimodalEvidenceCard, MultimodalUploadPanel } from "@/components/multimodal-evidence";
 import { SeverityBadge } from "@/components/severity-badge";
 import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,27 @@ export default async function IncidentDetailPage({ params }: { params: Promise<{
         ...hypotheses.filter((item) => item.title !== report.selected_root_cause),
       ]
     : hypotheses;
+  const evidenceById = new Map(evidence.map((item) => [item.id, item]));
+  const citationsByEvidenceId = new Map<number, string[]>();
+  const citationSourceTypes: Record<string, string> = {};
+  for (const chunk of chunks) {
+    citationsByEvidenceId.set(chunk.evidence_item_id, [
+      ...(citationsByEvidenceId.get(chunk.evidence_item_id) ?? []),
+      chunk.citation_id,
+    ]);
+    citationSourceTypes[chunk.citation_id] = evidenceById.get(chunk.evidence_item_id)?.source_type ?? "log";
+  }
+  const multimodalSourceTypes = new Set([
+    "screenshot",
+    "dashboard_screenshot",
+    "sentry_screenshot",
+    "architecture_diagram",
+    "pdf_runbook",
+    "pdf_postmortem",
+    "voice_note",
+  ]);
+  const multimodalEvidence = evidence.filter((item) => multimodalSourceTypes.has(item.source_type));
+  const textEvidence = evidence.filter((item) => !multimodalSourceTypes.has(item.source_type));
 
   return (
     <div className="grid gap-4 xl:grid-cols-[280px_minmax(0,1fr)_380px]">
@@ -88,16 +110,38 @@ export default async function IncidentDetailPage({ params }: { params: Promise<{
 
             <RetrievalStatusStrip evidenceItems={evidence} />
 
+            <MultimodalUploadPanel incidentId={incident.id} compact />
+
             <div className="space-y-3">
               <div className="label-caps text-slate-500">Evidence Processing</div>
               <div className="grid gap-3 md:grid-cols-2">
-                {evidence.map((item) => (
+                {textEvidence.map((item) => (
                   <EvidenceCard
                     key={item.id}
                     evidence={item}
                     chunkCount={chunks.filter((chunk) => chunk.evidence_item_id === item.id).length}
                   />
                 ))}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <div className="label-caps text-slate-500">Multimodal Evidence</div>
+                <div className="mt-1 text-xs text-slate-500">Extracted visual, document, and audio evidence available to the latest investigation.</div>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                {multimodalEvidence.map((item) => {
+                  const itemCitations = citationsByEvidenceId.get(item.id) ?? [];
+                  return (
+                    <MultimodalEvidenceCard
+                      key={item.id}
+                      evidence={item}
+                      citationIds={itemCitations}
+                      usedInInvestigation={Boolean(report && itemCitations.some((citation) => report.report_markdown.includes(`[${citation}]`)))}
+                    />
+                  );
+                })}
               </div>
             </div>
 
@@ -123,7 +167,12 @@ export default async function IncidentDetailPage({ params }: { params: Promise<{
 
       <div className="space-y-4">
         <ConfidenceGauge value={report?.confidence_score ?? incident.latest_confidence_score ?? 0.86} />
-        <InvestigationWorkspace incidentId={incident.id} initialReport={report} initialTrace={trace} />
+        <InvestigationWorkspace
+          incidentId={incident.id}
+          initialReport={report}
+          initialTrace={trace}
+          citationSourceTypes={citationSourceTypes}
+        />
         <Card>
           <CardHeader><div className="text-sm font-medium text-white">Key Evidence</div></CardHeader>
           <CardContent className="space-y-3">
