@@ -2,510 +2,448 @@
 
 # IncidentLens AI
 
-IncidentLens AI is a production-style multimodal AI SRE copilot for investigating incidents with grounded evidence, multi-agent workflows, and LLMOps visibility.
+IncidentLens AI is a production-style incident intelligence platform for Site Reliability Engineering teams. It combines multimodal evidence ingestion, retrieval-augmented generation, multi-agent investigation, evaluation, and LLMOps visibility in one approval-aware workflow.
 
-The frontend began from the Stitch UI prototype and was upgraded into a complete Phase 7 operational UX system. It preserves the reference information architecture while using a restrained command-center visual language, responsive navigation, accessible shadcn/Radix primitives, and fully wired investigation interactions.
+The repository is complete through Phase 7 and runs locally in deterministic mock mode without paid model APIs.
 
-## What’s In The Repo Today
+## Product Overview
 
-This repository currently includes:
+IncidentLens turns fragmented operational signals into a grounded investigation report:
 
-- a `pnpm` monorepo with `apps/web`, `apps/api`, and `packages/shared`
-- a Next.js App Router frontend for dashboard, incidents, evidence, trace, evals, and settings
-- a FastAPI backend with incident, evidence, retrieval, and investigation endpoints
-- a Phase 2 RAG pipeline with normalization, chunking, embeddings, and hybrid retrieval
-- a Phase 3 multi-agent investigation workflow with persisted reports and traces
-- a Phase 4 mock integration layer for GitHub, Sentry, Prometheus, Statuspage, and runbook evidence import
-- a Phase 5 local eval harness with CLI, API, persistence, and dashboard history
-- a Phase 6 LLMOps surface for prompt versions, model routing, latency, token usage, and cost visibility
-- a Phase 7 multimodal pipeline for screenshots, PDFs, text documents, and voice notes
-- seeded payment incident data for realistic local demos
-- docs for architecture, RAG, agents, evals, LLMOps, and multimodal evidence
+- collects evidence from logs, pull requests, metrics, runbooks, screenshots, PDFs, and voice notes
+- normalizes, chunks, embeds, and retrieves evidence with stable citations
+- orchestrates specialized agents for intake, retrieval, tool execution, root-cause analysis, remediation, and evaluation
+- persists reports, agent runs, tool calls, latency, token use, and estimated cost
+- keeps rollback, hotfix, feature-flag, and production mutation steps behind human approval
+- measures retrieval quality, grounding, safety, latency, and regression risk
 
-## Product Positioning
+This is an incident workspace rather than a chatbot interface. The primary UX is designed for triage, evidence inspection, reasoning review, and controlled action.
 
-This is not a chatbot wrapper. IncidentLens AI is designed as a serious internal engineering platform for:
+## Current Capabilities
 
-- Site Reliability Engineers
-- DevOps engineers
-- platform teams
-- backend engineers
-- engineering managers
-- recruiters and hiring managers reviewing applied AI portfolios
-
-It demonstrates how AI can support production incident response while staying grounded in operational evidence and explicit approval boundaries.
-
-## Tech Stack
-
-- Frontend: Next.js 15, React 19, TypeScript, Tailwind CSS, shadcn-style UI primitives
-- Backend: FastAPI, SQLAlchemy, PostgreSQL, pgvector, Redis
-- AI and retrieval: evidence normalization, chunking, embeddings, vector retrieval, keyword fallback, deterministic mock mode
-- DevEx: `pnpm` workspaces, Docker Compose, Makefile, seeded demo flow
-
-## UX And Brand System
-
-The frontend follows the semantic rules in [`DESIGN.md`](DESIGN.md): Geist and JetBrains Mono typography, a single mineral-cyan product accent, deep graphite surfaces, compact operational density, hardware-like double-bezel workspaces, and restrained transform/opacity motion.
-
-Original vector brand assets are included under `apps/web/public/brand/`:
-
-- `incidentlens-mark.svg` for navigation and product surfaces
-- `incidentlens-wordmark.svg` for branded documentation and future launch surfaces
-- `incidentlens-favicon.svg` for browser metadata
-
-The Phase 7 UX flow includes command search, responsive sheet navigation, selectable incident triage, evidence upload and extraction progress, semantic retrieval, persisted investigation execution, expandable tool-call JSON, approval-request states, evaluation feedback, and editable LLMOps controls. Emojis, sparkle motifs, robot imagery, purple AI gradients, and decorative chatbot patterns are intentionally excluded.
-
-## Implemented Product Surfaces
-
-The current frontend includes these routes:
-
-- `/` dashboard
-- `/incidents` incident list and queue
-- `/incidents/[id]` investigation workspace
-- `/incidents/[id]/trace` agent trace viewer
-- `/evidence` evidence workspace
-- `/evals` evaluation dashboard
-- `/settings` LLMOps and model settings
-
-Key UI components already present in the codebase include:
-
-- `AppShell`, `Sidebar`, `Topbar`
-- `MetricCard`, `SeverityBadge`, `StatusBadge`
-- `IncidentTable`, `IncidentTimeline`
-- `EvidenceCard`, `EvidenceCitation`, `ConfidenceGauge`
-- `MultimodalUploadPanel`, `MultimodalEvidenceCard`, media previews, extraction and classification badges
-
-## Monorepo Layout
-
-```text
-IncidentLensAI/
-├── apps/
-│   ├── api/        # FastAPI backend, agents, retrieval, models, seed flow
-│   └── web/        # Next.js frontend rebuilt from Stitch reference screens
-├── config/         # model and runtime configuration
-├── docs/           # architecture, RAG, agents, evals, LLMOps docs
-├── evals/          # evaluation harness assets
-├── packages/       # shared workspace packages
-├── prompts/        # versioned prompt definitions for agent steps
-├── docker-compose.yml
-├── Makefile
-└── README.md
-```
+| Phase | Capability | Implementation |
+| --- | --- | --- |
+| 1 | Product foundation | Next.js application shell, incident dashboard, FastAPI service, seeded incident data |
+| 2 | Retrieval pipeline | normalization, chunking, embeddings, keyword fallback, pgvector-ready semantic retrieval |
+| 3 | Investigation agents | persisted multi-agent orchestration, report generation, citations, traces, tool calls |
+| 4 | Production adapters | mock GitHub, Sentry, Prometheus, Statuspage, runbook, and prior-incident imports |
+| 5 | Evaluation | local dataset runner, history API, quality metrics, failed-case inspection |
+| 6 | LLMOps | model routing, prompt versions, tracing, latency, tokens, cost, runtime settings |
+| 7 | Multimodal evidence | screenshots, architecture diagrams, PDFs, text documents, and voice notes |
 
 ## System Architecture
 
 ```mermaid
 flowchart LR
-  UI["Next.js Web App"] --> API["FastAPI API"]
-  API --> DB[("PostgreSQL + pgvector")]
-  API --> REDIS[("Redis")]
-  API --> PROMPTS["Prompt Registry"]
-  API --> AGENTS["Investigation Agents"]
-  API --> SEED["Seeded Payment Incident"]
+    subgraph Client["Operations Console"]
+        WEB["Next.js 15 Web App"]
+        UX["Command Search and Responsive Workspaces"]
+        WEB --> UX
+    end
+
+    subgraph Service["Incident Intelligence API"]
+        API["FastAPI"]
+        RAG["Evidence Processing and Retrieval"]
+        AGENTS["Investigation Agent Graph"]
+        EVALS["Evaluation Harness"]
+        LLMOPS["Prompt, Trace, and Cost Controls"]
+        API --> RAG
+        API --> AGENTS
+        API --> EVALS
+        API --> LLMOPS
+    end
+
+    subgraph Data["Persistence"]
+        DB[("PostgreSQL")]
+        VECTOR[("pgvector")]
+        REDIS[("Redis")]
+        FILES["Local Evidence Storage"]
+        PROMPTS["Versioned Prompt Registry"]
+    end
+
+    subgraph Sources["Operational Evidence"]
+        GH["GitHub"]
+        SENTRY["Sentry"]
+        PROM["Prometheus"]
+        STATUS["Statuspage"]
+        RUNBOOK["Runbooks and Prior Incidents"]
+        MEDIA["Images, PDFs, Audio, Text"]
+    end
+
+    WEB --> API
+    Sources --> API
+    RAG --> DB
+    RAG --> VECTOR
+    API --> REDIS
+    API --> FILES
+    AGENTS --> PROMPTS
+    RAG --> AGENTS
+    AGENTS --> DB
+    EVALS --> DB
 ```
 
-## Evidence And Retrieval Flow
+## Investigation Lifecycle
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor SRE as On-call Engineer
+    participant UI as Next.js Workspace
+    participant API as FastAPI
+    participant EX as Multimodal Extractors
+    participant RAG as Retrieval Pipeline
+    participant AG as Agent Workflow
+    participant DB as Persistence
+
+    SRE->>UI: Select incident and add evidence
+    UI->>API: Upload or import evidence
+    API->>EX: Detect type and extract content
+    EX-->>API: Text, transcript, metadata, classification
+    API->>RAG: Normalize, chunk, embed, and index
+    RAG->>DB: Persist evidence chunks and citations
+    SRE->>UI: Run investigation
+    UI->>API: POST incident investigation
+    API->>AG: Start versioned agent workflow
+    AG->>RAG: Retrieve grounded incident context
+    RAG-->>AG: Ranked evidence with EVID citations
+    AG->>DB: Persist runs, tool calls, report, and evaluation
+    API-->>UI: Report, confidence, trace, and gated actions
+    UI-->>SRE: Review evidence and request approval
+```
+
+## Phase Progression
+
+```mermaid
+flowchart LR
+    P1["Phase 1\nFoundation"] --> P2["Phase 2\nRAG"]
+    P2 --> P3["Phase 3\nAgents"]
+    P3 --> P4["Phase 4\nIntegrations"]
+    P4 --> P5["Phase 5\nEvaluations"]
+    P5 --> P6["Phase 6\nLLMOps"]
+    P6 --> P7["Phase 7\nMultimodal"]
+
+    P2 -. "citations" .-> P7
+    P3 -. "reports and traces" .-> P7
+    P5 -. "quality gates" .-> P7
+    P6 -. "model governance" .-> P7
+```
+
+## Frontend Experience
+
+| Route | Purpose |
+| --- | --- |
+| `/` | incident command dashboard, active metrics, production readiness, and queue |
+| `/incidents` | selectable incident triage with filters and a contextual summary rail |
+| `/incidents/[id]` | investigation workspace with timeline, evidence, report, hypotheses, and gated actions |
+| `/incidents/[id]/trace` | agent graph, run telemetry, expandable tool-call JSON, and report snapshot |
+| `/evidence` | multimodal upload, connected-source import, processing state, chunks, and retrieval |
+| `/evals` | evaluation history, quality metrics, regressions, and failed cases |
+| `/settings` | model routing, embeddings, tracing, prompt versions, cost controls, and governance |
+
+The frontend includes:
+
+- responsive sheet navigation and keyboard command search
+- desktop, tablet, and mobile investigation layouts
+- selectable incident rows and service, severity, and status filters
+- visible upload, extraction, chunking, embedding, and retrieval states
+- approval-request state for production-changing recommendations
+- designed loading, empty, failure, and no-result states
+- deterministic API fallbacks that keep the local demo usable
+
+## Design System
+
+[`DESIGN.md`](DESIGN.md) is the frontend source of truth. The visual system uses:
+
+- Geist for interface typography and JetBrains Mono for operational data
+- deep graphite surfaces with one mineral-cyan product accent
+- semantic red, amber, and green reserved for incident state
+- compact operational density and asymmetric workspace layouts
+- double-bezel surfaces for major work areas
+- transform and opacity motion with reduced-motion support
+- accessible Radix-backed shadcn primitives for dialogs and mobile navigation
+
+Original vector brand assets are stored in `apps/web/public/brand/`:
+
+- `incidentlens-mark.svg`
+- `incidentlens-wordmark.svg`
+- `incidentlens-favicon.svg`
+
+The interface intentionally excludes emojis, sparkle motifs, robot imagery, decorative chatbot patterns, neon glows, and purple AI gradients.
+
+## Multimodal Evidence Pipeline
+
+Supported evidence types:
+
+| Category | Formats | Processing |
+| --- | --- | --- |
+| Images | `.png`, `.jpg`, `.jpeg`, `.webp` | visual extraction, dashboard classification, metadata, OCR-ready provider boundary |
+| Documents | `.pdf`, `.md`, `.txt` | PDF or text extraction, safe fallback, normalization |
+| Audio | `.mp3`, `.wav`, `.m4a` | deterministic voice-note transcription through a swappable provider |
+| Connected sources | GitHub, Sentry, Prometheus, Statuspage, runbooks | adapter import into the same evidence contract |
 
 ```mermaid
 flowchart TD
-  A["Evidence Item"] --> B["Normalize Content"]
-  B --> C["Chunk Evidence"]
-  C --> D["Generate Embeddings"]
-  D --> E["Store Vectors"]
-  B --> F["Keyword Fallback Index"]
-  E --> G["Semantic Retrieval"]
-  F --> H["Hybrid Results"]
-  G --> H
-  H --> I["Citation-Grounded Evidence Results"]
+    UPLOAD["Upload or Import"] --> DETECT{"Detect Evidence Type"}
+    DETECT --> IMAGE["Image Extractor"]
+    DETECT --> PDF["PDF Extractor"]
+    DETECT --> AUDIO["Audio Transcriber"]
+    DETECT --> TEXT["Text Normalizer"]
+    IMAGE --> CLASSIFY["Dashboard Classification"]
+    CLASSIFY --> NORMALIZE["Normalized Evidence"]
+    PDF --> NORMALIZE
+    AUDIO --> NORMALIZE
+    TEXT --> NORMALIZE
+    NORMALIZE --> CHUNK["Citation-Aware Chunking"]
+    CHUNK --> EMBED["384-Dimension Embeddings"]
+    EMBED --> INDEX["pgvector or Deterministic Fallback"]
+    INDEX --> RETRIEVE["Hybrid Ranked Retrieval"]
+    RETRIEVE --> REPORT["Grounded Agent Report"]
 ```
 
-### Retrieval Notes
-
-- Embedding model target: `sentence-transformers/all-MiniLM-L6-v2`
-- Fallback path: deterministic 384-dimension embeddings when the local model is unavailable
-- Citation style: `EVID-001`, `EVID-002`, `EVID-003`
-- Processing routes:
-  - `POST /api/evidence/{evidence_id}/process`
-  - `POST /api/incidents/{incident_id}/evidence/process-all`
-- Retrieval route:
-  - `POST /api/retrieval/search`
-
-## Multimodal Evidence Processing
-
-IncidentLens AI supports multimodal incident evidence including dashboard screenshots, Sentry screenshots, architecture diagrams, PDF runbooks, postmortems, and voice notes.
-
-The multimodal pipeline:
-
-1. Upload file
-2. Detect file type
-3. Extract text or transcript
-4. Classify visual evidence where applicable
-5. Normalize extracted content
-6. Chunk and embed content
-7. Store in pgvector
-8. Retrieve as citation-grounded evidence
-9. Use evidence in the multi-agent investigation workflow
-
-```mermaid
-flowchart TD
-    A["Uploaded File"] --> B["File Type Detection"]
-    B --> C{"Evidence Type"}
-    C --> D["Image Extractor"]
-    C --> E["PDF Extractor"]
-    C --> F["Audio Extractor"]
-    D --> G["Extracted Text + Visual Metadata"]
-    E --> H["Extracted Document Text"]
-    F --> I["Transcript"]
-    G --> J["Normalize"]
-    H --> J
-    I --> J
-    J --> K["Chunk"]
-    K --> L["Embed"]
-    L --> M["pgvector"]
-    M --> N["RAG Retrieval"]
-    N --> O["Agent Investigation"]
-```
-
-Supported upload formats:
-
-- images: `.png`, `.jpg`, `.jpeg`, `.webp`
-- documents: `.pdf`, `.md`, `.txt`
-- audio: `.mp3`, `.wav`, `.m4a`
-
-Files are stored in `apps/api/storage/evidence/` for local development and are excluded from Git. The default upload limit is 25 MB and can be changed with `MAX_EVIDENCE_UPLOAD_BYTES`.
-
-Mock mode remains the default:
-
-- image interpretation is deterministic from filename and optional description signals
-- dashboard classification detects healthy, degraded, outage, latency spike, error spike, and resource saturation states
-- voice-note transcription is deterministic and incident-specific
-- PDF text extraction uses `pypdf` and returns a safe fallback message when extraction is unavailable or the document has no readable text
-- deterministic embeddings keep processing and retrieval operational without paid APIs
-
-The provider boundaries are intentionally swappable:
-
-- `ImageExtractionProvider` can be extended with a HuggingFace image-to-text or vision-language adapter
-- `AudioTranscriptionProvider` can be extended with a HuggingFace automatic speech recognition adapter
-- the existing retrieval layer provides visual document retrieval and document question answering over extracted screenshot and PDF chunks
-
-Multimodal evidence appears in:
-
-- `/evidence` with upload progress, extraction status, processing status, embedding status, media preview, extracted text, classification, and citations
-- `/incidents/[id]` with evidence-use status for the latest investigation
-- retrieval results with image, document, transcript, or terminal source badges
-- generated reports under `### Multimodal Evidence`
-
-## Investigation Workflow
-
-```mermaid
-flowchart TD
-  A["Incident"] --> B["Intake Agent"]
-  B --> C["Retrieval Agent"]
-  C --> D["Tool Execution Agent"]
-  D --> E["Root Cause Agent"]
-  E --> F["Remediation Agent"]
-  F --> G["Evaluation Agent"]
-  G --> H["Report Builder"]
-  H --> I["Persisted Incident Report"]
-  B --> J["Agent Run Trace"]
-  C --> J
-  D --> J
-  E --> J
-  F --> J
-  G --> J
-  D --> K["Tool Call Records"]
-```
-
-### Investigation Notes
-
-- mock LLM mode is enabled by default for deterministic local demos
-- reports are persisted and rendered with evidence citations
-- trace data captures agent runs, prompt versions, model names, latency, and token counts
-- risky remediation steps remain approval-gated and are never auto-executed
-- investigation routes:
-  - `POST /api/incidents/{incident_id}/investigate`
-  - `GET /api/incidents/{incident_id}/report`
-  - `GET /api/incidents/{incident_id}/trace`
-
-## Mock Integrations
-
-Phase 4 adds clean mock production adapters that stay separate from agent logic:
-
-- GitHub
-- Sentry
-- Prometheus
-- Statuspage
-- runbook and prior-incident knowledge import
-
-Current integration routes:
-
-- `GET /api/integrations/health`
-- `POST /api/integrations/{integration_key}/incidents/{incident_id}/import`
-
-These adapters power:
-
-- integration health indicators in `/evidence`
-- import-evidence buttons for the seeded incident
-- tool execution outputs during the investigation workflow
+Uploaded files are stored under `apps/api/storage/evidence/` during local development. Runtime files are excluded from Git. The default upload limit is 25 MB and is configurable with `MAX_EVIDENCE_UPLOAD_BYTES`.
 
 ## Evaluation Methodology
 
-Phase 5 includes a deterministic local eval harness designed for portfolio demonstrations and regression checks.
+The local evaluation harness measures:
 
-Current eval metrics:
-
-- Recall@5
-- Recall@10
-- MRR
-- root cause accuracy
+- Recall@5 and Recall@10
+- mean reciprocal rank
+- root-cause accuracy
 - citation coverage
 - unsupported claim rate
 - unsafe action rate
 - average latency
 - average estimated cost
 
-Current eval execution paths:
+The seeded dataset is located at `evals/datasets/payment_api_incident.json`. Evaluation runs are persisted and displayed in `/evals`.
 
-- CLI: `./.venv/bin/python evals/run_eval.py`
-- API: `POST /api/evals/run`
-- History API: `GET /api/evals/history`
-- Frontend: `/evals`
+## Technology Stack
 
-The seeded dataset currently lives at:
+| Layer | Technology |
+| --- | --- |
+| Frontend | Next.js 15, React 19, TypeScript, Tailwind CSS, shadcn-style Radix primitives |
+| Backend | FastAPI, Pydantic, SQLAlchemy |
+| Data | PostgreSQL, pgvector, Redis, local evidence storage |
+| Retrieval | normalization, citation-aware chunking, embeddings, semantic search, keyword fallback |
+| Agent runtime | versioned prompts, deterministic mock model routing, persisted runs and tool calls |
+| Tooling | pnpm workspaces, Python virtual environment, Docker Compose, Makefile, pytest |
 
-- `evals/datasets/payment_api_incident.json`
+## Repository Structure
 
-## Demo Scenario
-
-The seeded incident models a realistic payment outage:
-
-- Title: `Payment API failures after webhook deployment`
-- Severity: `high`
-- Status: `investigating`
-- Service: `payments-api`
-
-Expected evidence and retrieval results reference items like `PR #482`, `SignatureMismatchError`, `payments/webhook.py`, `v1.42.0`, `payment_webhook_strict_mode`, Prometheus error spikes, and `INC-104`.
+```text
+IncidentLensAI/
+├── apps/
+│   ├── api/                     # FastAPI routes, models, services, agents, seed data
+│   └── web/                     # Next.js routes, components, brand assets, API client
+├── config/                      # model and runtime configuration
+├── docs/                        # architecture and subsystem design documents
+├── evals/                       # datasets and local evaluation runner
+├── packages/                    # shared workspace packages
+├── prompts/                     # versioned agent prompt definitions
+├── DESIGN.md                    # semantic UX and visual design system
+├── docker-compose.yml
+├── Makefile
+└── README.md
+```
 
 ## Local Development
 
-### 1. Install dependencies
+### Prerequisites
+
+- Node.js 20 or newer
+- pnpm 9 or newer
+- Python 3.11 or newer
+- Docker Desktop for the containerized stack
+
+### Install
 
 ```bash
-pnpm install
-python3 -m pip install -r apps/api/requirements.txt
-```
-
-### 2. Create environment config
-
-```bash
+git clone https://github.com/InsaneCoder789/IncidentLensAI.git
+cd IncidentLensAI
+make setup
 cp .env.example .env
 ```
 
-Current env variables:
-
-- `DATABASE_URL`
-- `REDIS_URL`
-- `BACKEND_HOST`
-- `BACKEND_PORT`
-- `FRONTEND_PORT`
-- `NEXT_PUBLIC_API_URL`
-- `ENVIRONMENT`
-- `MOCK_MODE`
-
-### 3. Start with Docker
-
-```bash
-docker compose up --build
-```
-
-### 4. Or run locally with Make
-
-```bash
-make dev
-```
-
-Useful targets:
-
-- `make setup`
-- `make dev`
-- `make dev-web`
-- `make dev-api`
-- `make seed`
-- `make docker-up`
-- `make docker-down`
-
-The intended local Python runtime is the project venv:
-
-```bash
-.venv/bin/uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 --app-dir apps/api
-```
-
-### 5. Run services manually
-
-Backend:
-
-```bash
-cd apps/api
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-Frontend:
-
-```bash
-cd apps/web
-pnpm dev
-```
-
-## API Surface
-
-- `GET /`
-- `GET /api/health`
-- `GET /api/incidents`
-- `POST /api/incidents`
-- `GET /api/incidents/{incident_id}`
-- `PATCH /api/incidents/{incident_id}`
-- `DELETE /api/incidents/{incident_id}`
-- `GET /api/incidents/{incident_id}/evidence`
-- `POST /api/incidents/{incident_id}/evidence`
-- `POST /api/incidents/{incident_id}/evidence/upload`
-- `DELETE /api/evidence/{evidence_id}`
-- `GET /api/evidence/{evidence_id}/file`
-- `POST /api/evidence/{evidence_id}/process`
-- `POST /api/incidents/{incident_id}/evidence/process-all`
-- `GET /api/incidents/{incident_id}/chunks`
-- `POST /api/retrieval/search`
-- `GET /api/integrations/health`
-- `POST /api/integrations/{integration_key}/incidents/{incident_id}/import`
-- `POST /api/incidents/{incident_id}/investigate`
-- `GET /api/incidents/{incident_id}/report`
-- `GET /api/incidents/{incident_id}/trace`
-- `GET /api/evals/history`
-- `POST /api/evals/run`
-
-## Quick Verification
-
-### Test retrieval locally
-
-```bash
-make setup
-make seed
-make dev
-curl -X POST http://localhost:8000/api/incidents/1/evidence/process-all
-curl -X POST http://localhost:8000/api/retrieval/search \
-  -H "Content-Type: application/json" \
-  -d '{
-    "incident_id": 1,
-    "query": "What caused the payment API failure?",
-    "top_k": 8
-  }'
-```
-
-### Test investigation locally
+### Seed the demo incident
 
 ```bash
 make seed
-make dev
-curl -X POST http://localhost:8000/api/incidents/1/evidence/process-all
-curl -X POST http://localhost:8000/api/incidents/1/investigate
-curl http://localhost:8000/api/incidents/1/report
-curl http://localhost:8000/api/incidents/1/trace
 ```
 
-### Test a multimodal upload locally
+### Run locally
 
 ```bash
-curl -X POST http://localhost:8000/api/incidents/1/evidence/upload \
-  -F "file=@/absolute/path/to/grafana-payment-errors.png" \
-  -F "title=Grafana payment error spike screenshot" \
-  -F "description=Payment dashboard captured during the v1.42.0 incident" \
-  -F "process_immediately=true"
-
-curl -X POST http://localhost:8000/api/retrieval/search \
-  -H "Content-Type: application/json" \
-  -d '{
-    "incident_id": 1,
-    "query": "What did the Grafana screenshot show about payment errors?",
-    "source_types": ["dashboard_screenshot"],
-    "top_k": 8,
-    "score_threshold": 0
-  }'
+make dev
 ```
 
-Run the focused backend tests and production frontend build:
+The frontend runs at `http://localhost:3000` and the API runs at `http://localhost:8000`.
+
+Run services independently when needed:
+
+```bash
+make dev-web
+make dev-api
+```
+
+### Run with Docker
+
+```bash
+make docker-up
+```
+
+Stop and remove local containers:
+
+```bash
+make docker-down
+```
+
+## Environment Configuration
+
+| Variable | Default purpose |
+| --- | --- |
+| `DATABASE_URL` | PostgreSQL connection string |
+| `REDIS_URL` | Redis connection string |
+| `BACKEND_HOST` | FastAPI bind host |
+| `BACKEND_PORT` | FastAPI port |
+| `FRONTEND_PORT` | Next.js port |
+| `NEXT_PUBLIC_API_URL` | browser-visible API base URL |
+| `ENVIRONMENT` | runtime environment name |
+| `MOCK_MODE` | deterministic local model and integration behavior |
+| `EVIDENCE_STORAGE_DIR` | local evidence file directory |
+| `MAX_EVIDENCE_UPLOAD_BYTES` | maximum accepted upload size |
+
+## API Workflows
+
+### Incident management
+
+```text
+GET    /api/incidents
+POST   /api/incidents
+GET    /api/incidents/{incident_id}
+PATCH  /api/incidents/{incident_id}
+DELETE /api/incidents/{incident_id}
+```
+
+### Evidence and retrieval
+
+```text
+GET    /api/incidents/{incident_id}/evidence
+POST   /api/incidents/{incident_id}/evidence
+POST   /api/incidents/{incident_id}/evidence/upload
+DELETE /api/evidence/{evidence_id}
+GET    /api/evidence/{evidence_id}/file
+POST   /api/evidence/{evidence_id}/process
+POST   /api/incidents/{incident_id}/evidence/process-all
+GET    /api/incidents/{incident_id}/chunks
+POST   /api/retrieval/search
+```
+
+### Investigation and telemetry
+
+```text
+POST /api/incidents/{incident_id}/investigate
+GET  /api/incidents/{incident_id}/report
+GET  /api/incidents/{incident_id}/trace
+```
+
+### Integrations, evaluations, and LLMOps
+
+```text
+GET  /api/integrations/health
+POST /api/integrations/{integration_key}/incidents/{incident_id}/import
+GET  /api/evals/history
+POST /api/evals/run
+GET  /api/llmops/overview
+```
+
+Interactive API documentation is available at `http://localhost:8000/docs` while the backend is running.
+
+## Verification
+
+Run the complete backend and frontend verification target:
 
 ```bash
 make test
 ```
 
+This executes:
+
+- backend pytest coverage for multimodal classification, extraction fallback, secure storage paths, upload, retrieval, and report integration
+- TypeScript type checking
+- the optimized Next.js production build for all application routes
+
+Test retrieval manually:
+
+```bash
+curl -X POST http://localhost:8000/api/retrieval/search \
+  -H "Content-Type: application/json" \
+  -d '{
+    "incident_id": 1,
+    "query": "What caused the payment API failure?",
+    "top_k": 8,
+    "score_threshold": 0.2
+  }'
+```
+
+Test multimodal upload and retrieval:
+
+```bash
+curl -X POST http://localhost:8000/api/incidents/1/evidence/upload \
+  -F "file=@/absolute/path/to/grafana-payment-errors.png" \
+  -F "title=Grafana payment error spike" \
+  -F "description=Dashboard captured during the payment incident" \
+  -F "process_immediately=true"
+```
+
+## Demo Scenario
+
+The seeded scenario models payment failures after release `v1.42.0`:
+
+- service: `payments-api`
+- leading root cause: webhook validation regression
+- code signal: `PR #482` and `payments/webhook.py`
+- runtime signal: `SignatureMismatchError`
+- configuration signal: `payment_webhook_strict_mode`
+- visual signal: Grafana error-rate and latency spike
+- human signal: incident war-room voice note
+- counter-evidence: payment provider status remains operational
+
+The expected report selects the webhook validation regression, cites the supporting evidence, records missing evidence, and keeps rollback or feature-flag changes approval-gated.
+
 ## Demo Walkthrough
 
-Use this flow for a clean local product demo:
+1. Open `/` and review the production command dashboard.
+2. Use `/incidents` to select and triage the seeded payment incident.
+3. Open `/evidence`, import connected sources, and upload multimodal evidence.
+4. Search the indexed chunks and review ranked citations.
+5. Open `/incidents/1` and run the persisted investigation workflow.
+6. Review the report, root-cause confidence, missing evidence, and gated actions.
+7. Open `/incidents/1/trace` and expand tool-call input and output JSON.
+8. Run the evaluation suite from `/evals`.
+9. Review model, prompt, tracing, and governance controls in `/settings`.
 
-1. Start the stack with the project venv-backed API and the Next.js frontend.
-2. Open `/` to show the dashboard and active Payment API incident.
-3. Open `/evidence` to show:
-   - integration health
-   - import buttons for GitHub, Sentry, Prometheus, Statuspage, and runbook knowledge
-   - processed evidence and ranked retrieval results
-4. Open `/incidents/1` and run the investigation workflow.
-5. Review the generated report and approval-gated actions.
-6. Open `/incidents/1/trace` to show:
-   - agent order
-   - latency
-   - token counts
-   - tool calls
-7. Open `/evals` and run the eval suite to show persisted quality metrics.
-8. Open `/settings` to show mock mode, prompt registry, integration health, and eval-backed LLMOps status.
+## Security And Governance
 
-This walkthrough now works fully in mock mode without paid APIs.
+- uploaded filenames are normalized and storage paths are validated against traversal
+- upload size and file extension are validated before processing
+- risky recommendations are surfaced but never automatically executed
+- evidence citations remain attached to report claims
+- model and prompt versions are visible in persisted traces
+- mock mode is enabled by default for safe local operation
+- runtime uploads, environment files, and credentials are excluded from Git
 
 ## Documentation
 
-Additional project notes live in:
+| Document | Scope |
+| --- | --- |
+| [`DESIGN.md`](DESIGN.md) | semantic UX system, visual tokens, layout, motion, and anti-patterns |
+| [`docs/architecture.md`](docs/architecture.md) | system architecture and service boundaries |
+| [`docs/rag-design.md`](docs/rag-design.md) | normalization, chunking, embeddings, retrieval, and citations |
+| [`docs/agent-design.md`](docs/agent-design.md) | agent responsibilities and orchestration |
+| [`docs/eval-design.md`](docs/eval-design.md) | datasets, metrics, execution, and regression analysis |
+| [`docs/llmops.md`](docs/llmops.md) | model routing, prompts, tracing, latency, tokens, and cost |
+| [`docs/multimodal-design.md`](docs/multimodal-design.md) | Phase 7 extraction, storage, retrieval, and frontend behavior |
 
-- `docs/architecture.md`
-- `docs/rag-design.md`
-- `docs/agent-design.md`
-- `docs/eval-design.md`
-- `docs/llmops.md`
-- `docs/multimodal-design.md`
+## Project Status
 
-## Expected Investigation Outcome
-
-For the seeded incident, the current investigation flow should converge on:
-
-- root cause: `Webhook validation regression`
-- grounded citations across `PR #482`, `SignatureMismatchError`, `payments/webhook.py`, `v1.42.0`, `payment_webhook_strict_mode`, `INC-104`, and statuspage evidence
-- approval-gated handling for risky actions
-- persisted trace output with agent runs and tool calls
-
-## Portfolio Value
-
-This project currently demonstrates:
-
-- serious AI product framing beyond chat UX
-- a Stitch-aligned frontend rebuilt as production-grade React code
-- RAG over operational evidence instead of toy document retrieval
-- multi-step investigation orchestration with persisted traces and reports
-- clean mock production integrations separated from agent logic
-- dataset-backed evaluation history with local CLI and backend execution paths
-- LLMOps-oriented thinking around prompt versions, costs, latency, and evaluation surfaces
-
-## Future Roadmap
-
-- real provider integrations beyond deterministic mock mode
-- deeper adapters for GitHub, Sentry, Prometheus, and Statuspage
-- broader eval datasets and regression automation
-- richer evidence ingestion for screenshots, documents, and multimodal workflows
-
-## Current Status
-
-The repository currently reflects:
-
-- Phase 2 Stitch-aligned frontend and RAG workflow work
-- Phase 2 retrieval verification and seeded evidence improvements
-- Phase 3 multi-agent investigation, trace persistence, report generation, and mock model routing
-- Phase 4 mock production integration adapters and evidence import surfaces
-- Phase 5 eval runner, eval persistence, eval APIs, and eval dashboard wiring
-- Phase 6 LLMOps documentation, runtime polish, and faster frontend fallback behavior
-
-This README is intentionally aligned with the code as it exists now, including the Stitch-based frontend direction and the current backend integration surface.
+Phase 7 is implemented and verified. The current repository includes the production-style frontend, FastAPI contracts, deterministic local data and model paths, multimodal retrieval, persisted agent reports and traces, evaluation history, and LLMOps controls described above.
