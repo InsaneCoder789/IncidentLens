@@ -1,71 +1,81 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, BarChart3, Bell, Database, Gauge, Home, Settings2, Siren, Sparkles } from "lucide-react";
+import { ArrowUpRight, ShieldCheck } from "lucide-react";
+import { navigationItems } from "@/components/navigation";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const nav = [
-  { href: "/", label: "Dashboard", icon: Home },
-  { href: "/incidents", label: "Incidents", icon: Bell },
-  { href: "/evidence", label: "Evidence", icon: Database },
-  { href: "/incidents/1/trace", label: "Agent Traces", icon: Activity },
-  { href: "/evals", label: "Evals", icon: BarChart3 },
-  { href: "/settings", label: "Settings", icon: Settings2 },
-];
-
-export function Sidebar() {
+export function NavigationContent({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
 
   return (
-    <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-line bg-[#10131b] xl:flex">
-      <div className="px-6 py-6">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#568dff] text-[#001945]">
-            <Gauge className="h-4 w-4" />
-          </div>
+    <div className="flex h-full flex-col">
+      <div className="px-5 pb-6 pt-5">
+        <Link href="/" onClick={onNavigate} className="inline-flex items-center gap-3 rounded-xl focus-visible:outline-none">
+          <Image src="/brand/incidentlens-mark.svg" alt="" width={40} height={40} priority />
           <div>
-            <div className="font-display text-base font-semibold leading-none text-[#b0c6ff]">IncidentLens AI</div>
-            <div className="mt-1 font-mono text-[10px] uppercase tracking-[0.18em] text-slate-500">SRE Copilot</div>
+            <div className="text-[15px] font-semibold tracking-[-0.025em] text-text">IncidentLens</div>
+            <div className="mt-0.5 font-mono text-[9px] font-medium uppercase tracking-[0.18em] text-muted">Incident intelligence</div>
           </div>
-        </div>
+        </Link>
       </div>
 
-      <nav className="flex-1 space-y-1 px-3 py-2">
-        {nav.map(({ href, label, icon: Icon }) => {
-          const active = pathname === href || (href !== "/" && pathname.startsWith(href));
+      <nav aria-label="Primary navigation" className="flex-1 space-y-1 px-3">
+        {navigationItems.map(({ href, label, description, icon: Icon }) => {
+          const active = pathname === href || (href !== "/" && pathname.startsWith(href) && !(href.includes("trace") && !pathname.includes("trace")));
           return (
             <Link
               key={href}
               href={href}
+              onClick={onNavigate}
+              aria-current={active ? "page" : undefined}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition",
-                active ? "bg-[#5b21b5] text-white" : "text-slate-300 hover:bg-[#1c1f28] hover:text-white",
+                "group flex min-h-12 items-center gap-3 rounded-xl border px-3 py-2 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                active ? "border-accent/15 bg-accent/[0.08] text-text" : "border-transparent text-muted hover:border-line/10 hover:bg-panel2 hover:text-text",
               )}
             >
-              <Icon className={cn("h-4 w-4", active ? "text-[#d3bbff]" : "text-slate-400")} />
-              <span>{label}</span>
+              <span className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-colors", active ? "border-accent/20 bg-accent/10 text-accent" : "border-line/10 bg-bg/35 text-muted group-hover:text-text")}>
+                <Icon className="h-[17px] w-[17px]" strokeWidth={1.45} />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-[13px] font-medium">{label}</span>
+                <span className="mt-0.5 block truncate text-[10px] text-muted/70">{description}</span>
+              </span>
+              {active ? <span className="ml-auto h-1.5 w-1.5 rounded-full bg-accent" aria-hidden="true" /> : null}
             </Link>
           );
         })}
       </nav>
 
-      <div className="space-y-4 border-t border-line px-4 py-4">
-        <Button variant="secondary" size="md" className="w-full justify-center gap-2 border-[#8957e5] bg-[#8957e5] text-white hover:bg-[#7445d0]">
-          <Sparkles className="h-3.5 w-3.5" />
-          Run AI Diagnosis
-        </Button>
-        <div className="rounded-lg border border-line bg-[#161b22] px-3 py-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-xs text-slate-200">Prod command mode</div>
-              <div className="mt-1 font-mono text-[10px] uppercase tracking-[0.08em] text-slate-500">payments-oncall</div>
-            </div>
-            <Siren className="h-4 w-4 text-[#ff8b3d]" />
+      <div className="space-y-3 border-t border-line/10 p-3">
+        <div className="rounded-[14px] border border-line/10 bg-bg/45 p-3.5">
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-2 w-2" aria-hidden="true">
+              <span className="absolute inline-flex h-full w-full animate-signal-pulse rounded-full bg-success" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
+            </span>
+            <span className="text-xs font-medium text-text">Production connected</span>
           </div>
+          <div className="mt-2 font-mono text-[9px] uppercase tracking-[0.12em] text-muted">payments-oncall / mock-safe</div>
         </div>
+        <Link href="/incidents/1" onClick={onNavigate} className="block">
+          <Button className="group w-full justify-between rounded-xl">
+            <span className="flex items-center gap-2"><ShieldCheck className="h-4 w-4" strokeWidth={1.5} />Open active incident</span>
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-bg/15 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-0.5 group-hover:-translate-y-0.5"><ArrowUpRight className="h-3.5 w-3.5" strokeWidth={1.5} /></span>
+          </Button>
+        </Link>
       </div>
+    </div>
+  );
+}
+
+export function Sidebar() {
+  return (
+    <aside className="sticky top-0 hidden h-[100dvh] w-[248px] shrink-0 border-r border-line/10 bg-panel/90 xl:block">
+      <NavigationContent />
     </aside>
   );
 }

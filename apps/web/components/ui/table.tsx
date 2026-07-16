@@ -13,15 +13,14 @@ export function TBody({ children }: React.PropsWithChildren) {
   return <tbody className="divide-y divide-white/8">{children}</tbody>;
 }
 
-export function Tr({ className, children }: React.PropsWithChildren<{ className?: string }>) {
-  return <tr className={cn("transition hover:bg-white/4", className)}>{children}</tr>;
+export function Tr({ className, children, ...props }: React.PropsWithChildren<React.HTMLAttributes<HTMLTableRowElement>>) {
+  return <tr className={cn("transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-line/[0.035]", className)} {...props}>{children}</tr>;
 }
 
-export function Th({ className, children }: React.PropsWithChildren<{ className?: string }>) {
-  return <th className={cn("px-4 py-3 font-medium", className)}>{children}</th>;
+export function Th({ className, children, ...props }: React.PropsWithChildren<React.ThHTMLAttributes<HTMLTableCellElement>>) {
+  return <th className={cn("px-4 py-3 font-medium", className)} {...props}>{children}</th>;
 }
 
-export function Td({ className, children }: React.PropsWithChildren<{ className?: string }>) {
-  return <td className={cn("px-4 py-4 align-top", className)}>{children}</td>;
+export function Td({ className, children, ...props }: React.PropsWithChildren<React.TdHTMLAttributes<HTMLTableCellElement>>) {
+  return <td className={cn("px-4 py-4 align-top", className)} {...props}>{children}</td>;
 }
-

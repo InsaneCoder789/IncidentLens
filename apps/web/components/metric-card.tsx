@@ -3,14 +3,14 @@ import { Card, CardContent } from "@/components/ui/card";
 function Sparkline({ values, tone }: { values: number[]; tone?: string }) {
   const max = Math.max(...values);
   return (
-    <div className="mt-3 flex h-8 items-end gap-1">
+    <div className="mt-5 flex h-7 items-end gap-1.5" aria-hidden="true">
       {values.map((value, index) => (
         <div
           key={`${value}-${index}`}
-          className="w-2 rounded-sm"
+          className="w-1.5 rounded-full opacity-70"
           style={{
             height: `${(value / max) * 100}%`,
-            backgroundColor: tone ?? "#568dff",
+            backgroundColor: tone ?? "#56B8C7",
           }}
         />
       ))}
@@ -33,21 +33,21 @@ export function MetricCard({
 }) {
   const toneClass =
     tone === "warning"
-      ? "#ff8b3d"
+      ? "#E7A75D"
       : tone === "danger"
-        ? "#f85149"
+        ? "#F06A6A"
         : tone === "success"
-          ? "#2dd4bf"
+          ? "#6FC69A"
           : tone === "accent"
-            ? "#568dff"
-            : "#8b949e";
+            ? "#56B8C7"
+            : "#7D8A99";
 
   return (
     <Card>
-      <CardContent className="min-h-[110px]">
-        <div className="label-caps text-slate-500">{label}</div>
-        <div className="mt-2 flex items-end justify-between gap-3">
-          <div className="text-[28px] font-semibold leading-none text-white">{value}</div>
+      <CardContent className="min-h-[132px]">
+        <div className="label-caps text-muted">{label}</div>
+        <div className="mt-3 flex items-end justify-between gap-3">
+          <div className="font-mono text-[28px] font-medium leading-none tracking-[-0.04em] text-text">{value}</div>
           <div className="font-mono text-[11px]" style={{ color: toneClass }}>
             {delta}
           </div>

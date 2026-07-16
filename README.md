@@ -4,7 +4,7 @@
 
 IncidentLens AI is a production-style multimodal AI SRE copilot for investigating incidents with grounded evidence, multi-agent workflows, and LLMOps visibility.
 
-The frontend is implemented from the Stitch UI prototype and screens as the visual source of truth. The current web app intentionally follows the Stitch layout, spacing, hierarchy, dark-mode styling, and workspace composition while keeping the codebase clean, typed, reusable, and backend-ready.
+The frontend began from the Stitch UI prototype and was upgraded into a complete Phase 7 operational UX system. It preserves the reference information architecture while using a restrained command-center visual language, responsive navigation, accessible shadcn/Radix primitives, and fully wired investigation interactions.
 
 ## What’s In The Repo Today
 
@@ -41,6 +41,18 @@ It demonstrates how AI can support production incident response while staying gr
 - Backend: FastAPI, SQLAlchemy, PostgreSQL, pgvector, Redis
 - AI and retrieval: evidence normalization, chunking, embeddings, vector retrieval, keyword fallback, deterministic mock mode
 - DevEx: `pnpm` workspaces, Docker Compose, Makefile, seeded demo flow
+
+## UX And Brand System
+
+The frontend follows the semantic rules in [`DESIGN.md`](DESIGN.md): Geist and JetBrains Mono typography, a single mineral-cyan product accent, deep graphite surfaces, compact operational density, hardware-like double-bezel workspaces, and restrained transform/opacity motion.
+
+Original vector brand assets are included under `apps/web/public/brand/`:
+
+- `incidentlens-mark.svg` for navigation and product surfaces
+- `incidentlens-wordmark.svg` for branded documentation and future launch surfaces
+- `incidentlens-favicon.svg` for browser metadata
+
+The Phase 7 UX flow includes command search, responsive sheet navigation, selectable incident triage, evidence upload and extraction progress, semantic retrieval, persisted investigation execution, expandable tool-call JSON, approval-request states, evaluation feedback, and editable LLMOps controls. Emojis, sparkle motifs, robot imagery, purple AI gradients, and decorative chatbot patterns are intentionally excluded.
 
 ## Implemented Product Surfaces
 

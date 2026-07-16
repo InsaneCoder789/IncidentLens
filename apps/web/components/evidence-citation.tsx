@@ -45,11 +45,11 @@ export function SourceTypeBadge({ sourceType }: { sourceType: string }) {
 export function EmbeddingStatusBadge({ status }: { status: string }) {
   const tone =
     status === "completed"
-      ? "border-[#2ea043]/30 bg-[#2ea0431a] text-[#7ee787]"
+      ? "border-[#4E9E77]/30 bg-[#4E9E771a] text-[#8FD8AF]"
       : status === "processing"
-        ? "border-[#568dff]/30 bg-[#568dff1a] text-[#b0c6ff]"
+        ? "border-[#56B8C7]/30 bg-[#56B8C71a] text-[#8FD3DD]"
         : status === "failed"
-          ? "border-[#f85149]/30 bg-[#f851491a] text-[#ffb4ab]"
+          ? "border-[#F06A6A]/30 bg-[#F06A6A1a] text-[#F3A0A0]"
           : "border-line bg-[#171b24] text-slate-300";
   return <Badge className={tone}>{status}</Badge>;
 }
@@ -57,11 +57,11 @@ export function EmbeddingStatusBadge({ status }: { status: string }) {
 export function ProcessingStatusBadge({ status }: { status: string }) {
   const tone =
     status === "embedded"
-      ? "border-[#2ea043]/30 bg-[#2ea0431a] text-[#7ee787]"
+      ? "border-[#4E9E77]/30 bg-[#4E9E771a] text-[#8FD8AF]"
       : status === "chunked" || status === "normalized"
-        ? "border-[#568dff]/30 bg-[#568dff1a] text-[#b0c6ff]"
+        ? "border-[#56B8C7]/30 bg-[#56B8C71a] text-[#8FD3DD]"
         : status === "failed"
-          ? "border-[#f85149]/30 bg-[#f851491a] text-[#ffb4ab]"
+          ? "border-[#F06A6A]/30 bg-[#F06A6A1a] text-[#F3A0A0]"
           : "border-line bg-[#171b24] text-slate-300";
   return <Badge className={tone}>{status}</Badge>;
 }
@@ -85,7 +85,7 @@ export function EvidenceCitation({
         <CitationBadge citationId={citationId} />
         <div className="flex items-center gap-2">
           {typeof score === "number" ? (
-            <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-[#7ee787]">{Math.round(score * 100)}%</span>
+            <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-[#8FD8AF]">{Math.round(score * 100)}%</span>
           ) : null}
           <FileTypeBadge sourceType={sourceType} />
         </div>
@@ -100,7 +100,7 @@ export function EvidenceUploadPanel() {
   return (
     <div className="rounded-xl border border-dashed border-line bg-panel px-5 py-8">
       <div className="flex items-start gap-4">
-        <div className="flex h-11 w-11 items-center justify-center rounded-lg border border-line bg-[#0b0f19] text-[#b0c6ff]">
+        <div className="flex h-11 w-11 items-center justify-center rounded-lg border border-line bg-[#0b0f19] text-[#8FD3DD]">
           <UploadCloud className="h-5 w-5" />
         </div>
         <div className="min-w-0">
@@ -253,7 +253,7 @@ export function SemanticSearchPanel({
             <div className="text-sm font-medium text-white">Semantic Search</div>
             <div className="mt-1 text-xs text-slate-500">Query the incident chunk store with the same backend route the FastAPI app exposes.</div>
           </div>
-          <Badge className="border-[#568dff]/30 bg-[#568dff1a] text-[#b0c6ff]">RAG</Badge>
+          <Badge className="border-[#56B8C7]/30 bg-[#56B8C71a] text-[#8FD3DD]">RAG</Badge>
         </div>
       </div>
       <div className="space-y-3 px-4 py-4">
@@ -334,7 +334,7 @@ export function ChunkPreviewCard({
         <CitationBadge citationId={citationId} />
         <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-slate-500">{tokenCount} tok</span>
       </div>
-      <div className="mt-2 font-mono text-[11px] leading-5 text-slate-300">{content}</div>
+      <div className="mt-2 whitespace-pre-wrap font-mono text-[11px] leading-5 text-slate-300 [overflow-wrap:anywhere]">{content}</div>
     </div>
   );
 }
@@ -364,7 +364,7 @@ export function RootCauseHypothesisCard({ id, title, confidence, summary }: { id
         <div className="text-sm font-medium text-white">
           {id} · {title}
         </div>
-        <div className="font-mono text-[10px] uppercase tracking-[0.08em] text-[#b0c6ff]">{Math.round(confidence * 100)}%</div>
+        <div className="font-mono text-[10px] uppercase tracking-[0.08em] text-[#8FD3DD]">{Math.round(confidence * 100)}%</div>
       </div>
       <p className="mt-2 text-xs leading-5 text-slate-400">{summary}</p>
     </div>
@@ -374,10 +374,10 @@ export function RootCauseHypothesisCard({ id, title, confidence, summary }: { id
 export function ActionPlanCard({ title, description, steps, tone = "safe" }: ActionPlan) {
   const toneClass =
     tone === "danger"
-      ? "border-[#f85149]/30 bg-[#22161b]"
+      ? "border-[#F06A6A]/30 bg-[#22161b]"
       : tone === "warning"
-        ? "border-[#ff8b3d]/30 bg-[#241b14]"
-        : "border-[#568dff]/20 bg-panel";
+        ? "border-[#E7A75D]/30 bg-[#241b14]"
+        : "border-[#56B8C7]/20 bg-panel";
 
   return (
     <div className={`rounded-lg border px-3 py-3 ${toneClass}`}>
@@ -386,7 +386,7 @@ export function ActionPlanCard({ title, description, steps, tone = "safe" }: Act
       <div className="mt-3 space-y-2">
         {steps.map((step) => (
           <div key={step} className="flex gap-2 text-xs text-slate-300">
-            <span className="mt-1 h-1.5 w-1.5 rounded-full bg-[#0070ff]" />
+            <span className="mt-1 h-1.5 w-1.5 rounded-full bg-[#56B8C7]" />
             <span>{step}</span>
           </div>
         ))}
@@ -412,9 +412,9 @@ export function AgentTraceGraph({ nodes }: { nodes: TraceNode[] }) {
               <Badge
                 className={
                   node.status === "completed"
-                    ? "border-[#2ea043]/30 bg-[#2ea0431a] text-[#7ee787]"
+                    ? "border-[#4E9E77]/30 bg-[#4E9E771a] text-[#8FD8AF]"
                     : node.status === "running"
-                      ? "border-[#568dff]/30 bg-[#568dff1a] text-[#b0c6ff]"
+                      ? "border-[#56B8C7]/30 bg-[#56B8C71a] text-[#8FD3DD]"
                       : "border-line bg-[#171b24] text-slate-300"
                 }
               >
@@ -460,7 +460,7 @@ export function ToolCallPanel({ calls }: { calls: ToolCallSummary[] }) {
               <div className="font-medium text-slate-200">{call.name}</div>
               <div className="mt-1 text-slate-500">{call.latency}</div>
             </div>
-            <Badge className={call.status === "warning" ? "border-[#ff8b3d]/30 bg-[#ff8b3d1a] text-[#ffb86b]" : "border-line bg-[#171b24] text-slate-300"}>
+            <Badge className={call.status === "warning" ? "border-[#E7A75D]/30 bg-[#E7A75D1a] text-[#EDBC82]" : "border-line bg-[#171b24] text-slate-300"}>
               {call.status}
             </Badge>
           </div>
@@ -471,7 +471,7 @@ export function ToolCallPanel({ calls }: { calls: ToolCallSummary[] }) {
 }
 
 export function EvalMetricCard({ label, value, sublabel, tone = "accent" }: EvalMetric) {
-  const barColor = tone === "danger" ? "#f85149" : tone === "warning" ? "#ff8b3d" : tone === "success" ? "#2ea043" : "#568dff";
+  const barColor = tone === "danger" ? "#F06A6A" : tone === "warning" ? "#E7A75D" : tone === "success" ? "#4E9E77" : "#56B8C7";
   return (
     <div className="rounded-lg border border-line bg-panel px-4 py-3">
       <div className="label-caps text-slate-500">{label}</div>
@@ -498,16 +498,16 @@ export function EvalHistoryChart({ labels, accuracy, latency }: { labels: string
           <div className="mt-1 text-xs text-slate-500">Accuracy and latency regression view across recent prompt releases.</div>
         </div>
         <div className="flex gap-3 text-[10px] font-mono uppercase tracking-[0.08em] text-slate-500">
-          <span className="text-[#568dff]">accuracy</span>
-          <span className="text-[#ff8b3d]">latency</span>
+          <span className="text-[#56B8C7]">accuracy</span>
+          <span className="text-[#E7A75D]">latency</span>
         </div>
       </div>
       <div className="grid grid-cols-7 gap-3">
         {labels.map((label, index) => (
           <div key={label} className="space-y-2">
             <div className="flex h-40 items-end justify-center gap-1 rounded-lg border border-line bg-[#10131b] px-2 py-3">
-              <div className="w-3 rounded-sm bg-[#568dff]" style={{ height: `${(accuracy[index] / maxValue) * 100}%` }} />
-              <div className="w-3 rounded-sm bg-[#ff8b3d]" style={{ height: `${(latency[index] / maxValue) * 100}%` }} />
+              <div className="w-3 rounded-sm bg-[#56B8C7]" style={{ height: `${(accuracy[index] / maxValue) * 100}%` }} />
+              <div className="w-3 rounded-sm bg-[#E7A75D]" style={{ height: `${(latency[index] / maxValue) * 100}%` }} />
             </div>
             <div className="text-center font-mono text-[10px] text-slate-500">{label}</div>
           </div>
@@ -537,7 +537,7 @@ export function FailedCasesTable({ failures }: { failures: EvalFailure[] }) {
               <td className="px-3 py-3 text-slate-400">{failure.timestamp}</td>
               <td className="px-3 py-3 text-slate-200">{failure.reason}</td>
               <td className="px-3 py-3 text-slate-300">{failure.confidence}</td>
-              <td className="px-3 py-3 text-right text-[#b0c6ff]">{failure.action}</td>
+              <td className="px-3 py-3 text-right text-[#8FD3DD]">{failure.action}</td>
             </tr>
           ))}
         </tbody>
@@ -555,25 +555,34 @@ export function SettingsSection({
   description: string;
   fields: SettingField[];
 }) {
-  const renderValue = (field: SettingField) => {
-    if (field.kind === "toggle") return field.value ? "Enabled" : "Disabled";
-    return String(field.value);
-  };
+  const [values, setValues] = useState<Record<string, string | number | boolean>>(() => Object.fromEntries(fields.map((field) => [field.label, field.value])));
+  const [saved, setSaved] = useState(false);
+
+  function update(label: string, value: string | number | boolean) {
+    setValues((current) => ({ ...current, [label]: value }));
+    setSaved(false);
+  }
 
   return (
-    <div className="rounded-xl border border-line bg-panel">
-      <div className="border-b border-line px-4 py-3">
-        <div className="text-sm font-medium text-white">{title}</div>
-        <div className="mt-1 text-xs text-slate-500">{description}</div>
+    <div className="surface-shell">
+      <div className="surface-core">
+      <div className="flex flex-col gap-3 border-b border-line/10 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <div><div className="text-sm font-medium text-text">{title}</div><div className="mt-1 text-xs text-muted">{description}</div></div>
+        <Button size="sm" variant={saved ? "secondary" : "default"} onClick={() => setSaved(true)}>{saved ? "Saved locally" : "Save changes"}</Button>
       </div>
-      <div className="grid gap-3 px-4 py-4 md:grid-cols-2">
+      <div className="divide-y divide-line/8 px-5">
         {fields.map((field) => (
-          <div key={field.label} className="rounded-lg border border-line bg-[#10131b] px-3 py-3">
-            <div className="text-xs text-slate-500">{field.label}</div>
-            <div className="mt-2 text-sm text-white">{renderValue(field)}</div>
-            {"description" in field && field.description ? <div className="mt-2 text-[11px] text-slate-500">{field.description}</div> : null}
+          <div key={field.label} className="grid gap-3 py-4 md:grid-cols-[minmax(0,1fr)_minmax(220px,0.75fr)] md:items-center">
+            <div><label className="text-sm font-medium text-text">{field.label}</label>{field.description ? <div className="mt-1 text-xs leading-5 text-muted">{field.description}</div> : null}</div>
+            <div className="md:justify-self-end md:w-full md:max-w-sm">
+              {field.kind === "toggle" ? <button type="button" role="switch" aria-checked={Boolean(values[field.label])} onClick={() => update(field.label, !values[field.label])} className={`flex min-h-11 w-full items-center justify-between rounded-xl border px-3 text-xs transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${values[field.label] ? "border-accent/25 bg-accent/[0.06] text-text" : "border-line/12 bg-bg/50 text-muted"}`}><span>{values[field.label] ? "Enabled" : "Disabled"}</span><span className={`relative h-5 w-9 rounded-full ${values[field.label] ? "bg-accent" : "bg-panel3"}`}><span className={`absolute top-0.5 h-4 w-4 rounded-full bg-text transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${values[field.label] ? "translate-x-[18px]" : "translate-x-0.5"}`} /></span></button> : null}
+              {field.kind === "input" ? <Input aria-label={field.label} value={String(values[field.label] ?? "")} onChange={(event) => update(field.label, event.target.value)} /> : null}
+              {field.kind === "select" ? <select aria-label={field.label} value={String(values[field.label])} onChange={(event) => update(field.label, event.target.value)} className="h-11 w-full rounded-[10px] border border-line/15 bg-bg/70 px-3 text-sm text-text">{field.options.map((option) => <option key={option}>{option}</option>)}</select> : null}
+              {field.kind === "slider" ? <div><input aria-label={field.label} type="range" min={field.min} max={field.max} step={field.step} value={Number(values[field.label])} onChange={(event) => update(field.label, Number(event.target.value))} className="w-full accent-[rgb(var(--accent))]" /><div className="mt-1 text-right font-mono text-[10px] text-muted">{String(values[field.label])}</div></div> : null}
+            </div>
           </div>
         ))}
+      </div>
       </div>
     </div>
   );
@@ -595,7 +604,7 @@ export function LoadingState({ title }: { title: string }) {
   return (
     <div className="rounded-xl border border-line bg-panel px-4 py-6">
       <div className="flex items-center gap-3">
-        <div className="h-2.5 w-2.5 animate-pulse rounded-full bg-[#568dff]" />
+        <div className="h-2.5 w-2.5 animate-pulse rounded-full bg-[#56B8C7]" />
         <div className="text-sm text-slate-300">{title}</div>
       </div>
     </div>
@@ -604,12 +613,12 @@ export function LoadingState({ title }: { title: string }) {
 
 export function ErrorState({ title, description }: { title: string; description: string }) {
   return (
-    <div className="rounded-xl border border-[#f85149]/30 bg-[#22161b] px-4 py-6">
-      <div className="flex items-center gap-3 text-[#ffb4ab]">
+    <div className="rounded-xl border border-[#F06A6A]/30 bg-[#22161b] px-4 py-6">
+      <div className="flex items-center gap-3 text-[#F3A0A0]">
         <AlertTriangle className="h-4 w-4" />
         <div className="text-sm font-medium">{title}</div>
       </div>
-      <div className="mt-2 text-xs leading-5 text-[#ffb4ab]/80">{description}</div>
+      <div className="mt-2 text-xs leading-5 text-[#F3A0A0]/80">{description}</div>
     </div>
   );
 }
@@ -631,7 +640,7 @@ export function RetrievalStatusStrip({ evidenceItems }: { evidenceItems: Evidenc
         <div className="text-xs text-slate-500">Embedded</div>
         <div className="mt-2 flex items-center gap-2 text-2xl font-semibold text-white">
           {summary.completed}
-          <CheckCircle2 className="h-4 w-4 text-[#7ee787]" />
+          <CheckCircle2 className="h-4 w-4 text-[#8FD8AF]" />
         </div>
       </div>
       <div className="rounded-lg border border-line bg-panel px-4 py-3">

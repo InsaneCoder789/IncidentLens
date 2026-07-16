@@ -5,15 +5,15 @@ type DivProps = React.HTMLAttributes<HTMLDivElement>;
 
 export function Card({ className, children, ...props }: React.PropsWithChildren<DivProps>) {
   return (
-    <div className={cn("glass rounded-lg shadow-glow", className)} {...props}>
-      {children}
+    <div className={cn("surface-shell", className)} {...props}>
+      <div className="surface-core h-full">{children}</div>
     </div>
   );
 }
 
 export function CardHeader({ className, children, ...props }: React.PropsWithChildren<DivProps>) {
   return (
-    <div className={cn("border-b border-line px-4 py-3", className)} {...props}>
+    <div className={cn("border-b border-line/10 px-5 py-4", className)} {...props}>
       {children}
     </div>
   );
@@ -21,7 +21,7 @@ export function CardHeader({ className, children, ...props }: React.PropsWithChi
 
 export function CardContent({ className, children, ...props }: React.PropsWithChildren<DivProps>) {
   return (
-    <div className={cn("px-4 py-3", className)} {...props}>
+    <div className={cn("px-5 py-4", className)} {...props}>
       {children}
     </div>
   );

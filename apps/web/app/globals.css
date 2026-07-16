@@ -3,83 +3,103 @@
 @tailwind utilities;
 
 :root {
-  --background: 11 15 25;
-  --foreground: 224 226 238;
-  --panel: 22 27 34;
-  --panel-2: 28 33 40;
-  --line: 48 54 61;
-  --accent: 0 112 255;
-  --accent-2: 137 87 229;
-  --warning: 255 139 61;
-  --danger: 248 81 73;
-  --success: 45 212 191;
+  --background: 9 13 18;
+  --foreground: 232 237 242;
+  --panel: 16 22 29;
+  --panel-2: 21 29 38;
+  --panel-3: 27 37 48;
+  --line: 178 196 214;
+  --muted: 125 138 153;
+  --accent: 86 184 199;
+  --warning: 231 167 93;
+  --danger: 240 106 106;
+  --success: 111 198 154;
+  --motion: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-html {
-  color-scheme: dark;
-}
+html { color-scheme: dark; background: rgb(var(--background)); }
 
 body {
   margin: 0;
-  min-height: 100vh;
-  background: #0b0f19;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at 78% -10%, rgba(86, 184, 199, 0.07), transparent 28rem),
+    rgb(var(--background));
   color: rgb(var(--foreground));
-  font-family: var(--font-sans), system-ui, sans-serif;
 }
 
-* {
-  box-sizing: border-box;
+* { box-sizing: border-box; border-color: rgb(var(--line) / 0.12); }
+::selection { background: rgb(var(--accent) / 0.25); color: rgb(var(--foreground)); }
+a { color: inherit; text-decoration: none; }
+button, input, select, textarea { font: inherit; }
+
+:focus-visible {
+  outline: 2px solid rgb(var(--accent) / 0.8);
+  outline-offset: 2px;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+.app-canvas {
+  background-image:
+    linear-gradient(rgb(var(--line) / 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(var(--line) / 0.025) 1px, transparent 1px);
+  background-size: 40px 40px;
 }
 
 .glass {
-  backdrop-filter: blur(12px);
-  background: rgba(var(--panel), 0.92);
-  border: 1px solid rgba(var(--line), 1);
+  background: rgb(var(--panel) / 0.96);
+  border: 1px solid rgb(var(--line) / 0.12);
 }
 
-.grid-bg {
-  background-image:
-    linear-gradient(rgba(48, 54, 61, 0.2) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(48, 54, 61, 0.2) 1px, transparent 1px);
-  background-size: 48px 48px;
+.surface-shell {
+  min-width: 0;
+  overflow: hidden;
+  padding: 5px;
+  border: 1px solid rgb(var(--line) / 0.1);
+  border-radius: 18px;
+  background: rgb(var(--line) / 0.035);
+}
+
+.surface-core {
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 13px;
+  background: rgb(var(--panel));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.035), 0 22px 60px rgb(2 7 12 / 0.22);
 }
 
 .label-caps {
   font-family: var(--font-mono), monospace;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
-.panel {
-  border-radius: 8px;
-  border: 1px solid rgb(var(--line));
-  background: rgb(var(--panel));
-}
-
 .terminal {
-  background: #050505;
-  border: 1px solid rgb(var(--line));
-  border-radius: 8px;
+  overflow-wrap: anywhere;
+  background: #080c10;
+  border: 1px solid rgb(var(--line) / 0.1);
+  border-radius: 10px;
+  box-shadow: inset 0 1px 10px rgb(0 0 0 / 0.18);
 }
 
-.scrollbar-thin {
-  scrollbar-width: thin;
-  scrollbar-color: #30363d transparent;
+.page-enter > * {
+  animation: reveal-up 700ms var(--motion) both;
 }
+.page-enter > *:nth-child(2) { animation-delay: 70ms; }
+.page-enter > *:nth-child(3) { animation-delay: 140ms; }
+.page-enter > *:nth-child(4) { animation-delay: 210ms; }
 
-.scrollbar-thin::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
+.scrollbar-thin { scrollbar-width: thin; scrollbar-color: rgb(var(--line) / 0.24) transparent; }
+.scrollbar-thin::-webkit-scrollbar { width: 8px; height: 8px; }
+.scrollbar-thin::-webkit-scrollbar-thumb { background: rgb(var(--line) / 0.24); border-radius: 999px; }
 
-.scrollbar-thin::-webkit-scrollbar-thumb {
-  background: #30363d;
-  border-radius: 999px;
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

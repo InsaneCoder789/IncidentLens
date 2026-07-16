@@ -14,7 +14,7 @@ export function IncidentTimeline({ events }: { events: TimelineEvent[] }) {
         <div className="space-y-4">
           {events.map((event, index) => {
             const tone =
-              event.tone === "critical" ? "#f85149" : event.tone === "warning" ? "#ff8b3d" : event.tone === "accent" ? "#8957e5" : "#8b949e";
+              event.tone === "critical" ? "#F06A6A" : event.tone === "warning" ? "#E7A75D" : event.tone === "accent" ? "#56B8C7" : "#7D8A99";
             return (
               <div key={`${event.time}-${index}`} className="grid grid-cols-[16px_1fr] gap-3">
                 <div className="relative flex justify-center">

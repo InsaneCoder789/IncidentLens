@@ -18,7 +18,7 @@ export function LoadingState({ label }: { label: string }) {
 
 export function ErrorState({ label }: { label: string }) {
   return (
-    <div className="rounded-lg border border-[#f85149]/40 bg-[#f8514912] px-4 py-5 text-xs text-[#ffb4ab]">
+    <div className="rounded-lg border border-[#F06A6A]/40 bg-[#F06A6A12] px-4 py-5 text-xs text-[#F3A0A0]">
       {label}
     </div>
   );

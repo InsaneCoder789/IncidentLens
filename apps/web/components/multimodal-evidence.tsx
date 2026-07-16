@@ -66,10 +66,10 @@ export function ExtractionStatusBadge({ status }: { status: string }) {
   const Icon = status === "completed" ? CheckCircle2 : status === "failed" ? XCircle : LoaderCircle;
   const tone =
     status === "completed"
-      ? "border-[#2ea043]/30 bg-[#2ea0431a] text-[#7ee787]"
+      ? "border-[#4E9E77]/30 bg-[#4E9E771a] text-[#8FD8AF]"
       : status === "failed"
-        ? "border-[#f85149]/30 bg-[#f851491a] text-[#ffb4ab]"
-        : "border-[#568dff]/30 bg-[#568dff1a] text-[#b0c6ff]";
+        ? "border-[#F06A6A]/30 bg-[#F06A6A1a] text-[#F3A0A0]"
+        : "border-[#56B8C7]/30 bg-[#56B8C71a] text-[#8FD3DD]";
   return (
     <Badge className={`gap-1.5 ${tone}`}>
       <Icon className={`h-3 w-3 ${status === "processing" ? "animate-spin" : ""}`} />
@@ -90,13 +90,13 @@ export function DashboardClassificationCard({ evidence }: { evidence: EvidenceIt
   const classification = classificationFor(evidence);
   if (!classification) return null;
   return (
-    <div className="rounded-lg border border-[#ff8b3d]/25 bg-[#241b14] px-3 py-3">
+    <div className="rounded-lg border border-[#E7A75D]/25 bg-[#241b14] px-3 py-3">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-xs font-medium text-[#ffd1ad]">
           <Activity className="h-3.5 w-3.5" />
           {classification.classification.replaceAll("_", " ")}
         </div>
-        <span className="font-mono text-[10px] text-[#ffb86b]">{Math.round(classification.confidence * 100)}%</span>
+        <span className="font-mono text-[10px] text-[#EDBC82]">{Math.round(classification.confidence * 100)}%</span>
       </div>
       <div className="mt-2 text-[11px] leading-5 text-[#ffd1ad]/70">{classification.signals.join(" · ")}</div>
     </div>
@@ -130,7 +130,7 @@ export function PdfEvidencePreview({ evidence }: { evidence: EvidenceItem }) {
   const pages = evidence.metadata_json.page_count;
   return (
     <div className="flex h-28 items-center gap-4 rounded-lg border border-line bg-[#0b0f19] px-4">
-      <FileText className="h-8 w-8 text-[#b0c6ff]" />
+      <FileText className="h-8 w-8 text-[#8FD3DD]" />
       <div>
         <div className="text-xs font-medium text-slate-200">{metadataString(evidence, "filename") ?? evidence.title}</div>
         <div className="mt-1 text-[11px] text-slate-500">{typeof pages === "number" && pages > 0 ? `${pages} pages extracted` : "PDF evidence"}</div>
@@ -144,7 +144,7 @@ export function AudioEvidencePreview({ evidence }: { evidence: EvidenceItem }) {
   return (
     <div className="rounded-lg border border-line bg-[#0b0f19] px-4 py-4">
       <div className="flex items-center gap-3">
-        <AudioLines className="h-5 w-5 text-[#b0c6ff]" />
+        <AudioLines className="h-5 w-5 text-[#8FD3DD]" />
         <div className="text-xs font-medium text-slate-200">{metadataString(evidence, "filename") ?? evidence.title}</div>
       </div>
       {hasFile ? <audio className="mt-3 h-8 w-full" controls preload="metadata" src={evidenceFileUrl(evidence.id)} /> : null}
@@ -197,11 +197,11 @@ export function MultimodalEvidenceCard({
         <Badge className="border-line bg-[#10131b] text-slate-300">process {evidence.processing_status}</Badge>
         <Badge className="border-line bg-[#10131b] text-slate-300">embed {evidence.embedding_status}</Badge>
         {citationIds.map((citationId) => (
-          <Badge key={citationId} className="border-[#568dff]/30 bg-[#568dff1a] font-mono text-[#b0c6ff]">
+          <Badge key={citationId} className="border-[#56B8C7]/30 bg-[#56B8C71a] font-mono text-[#8FD3DD]">
             {citationId}
           </Badge>
         ))}
-        <Badge className={usedInInvestigation ? "border-[#2ea043]/30 bg-[#2ea0431a] text-[#7ee787]" : "border-line bg-[#10131b] text-slate-500"}>
+        <Badge className={usedInInvestigation ? "border-[#4E9E77]/30 bg-[#4E9E771a] text-[#8FD8AF]" : "border-line bg-[#10131b] text-slate-500"}>
           {usedInInvestigation ? "used in latest report" : "available to agents"}
         </Badge>
       </div>
@@ -248,7 +248,7 @@ export function MultimodalUploadPanel({ incidentId, compact = false }: { inciden
   return (
     <div
       className={`rounded-xl border border-dashed px-5 ${compact ? "py-5" : "py-7"} transition-colors ${
-        dragging ? "border-[#568dff] bg-[#568dff0f]" : "border-line bg-panel"
+        dragging ? "border-[#56B8C7] bg-[#56B8C70f]" : "border-line bg-panel"
       }`}
       onDragEnter={(event) => {
         event.preventDefault();
@@ -275,7 +275,7 @@ export function MultimodalUploadPanel({ incidentId, compact = false }: { inciden
         }}
       />
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-line bg-[#0b0f19] text-[#b0c6ff]">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-line bg-[#0b0f19] text-[#8FD3DD]">
           <UploadCloud className="h-5 w-5" />
         </div>
         <div className="min-w-0 flex-1">
@@ -300,7 +300,7 @@ export function MultimodalUploadPanel({ incidentId, compact = false }: { inciden
                 <span>{progress}%</span>
               </div>
               <div className="h-1.5 overflow-hidden rounded-full bg-[#20262f]">
-                <div className={`h-full transition-all ${stage === "failed" ? "bg-[#f85149]" : "bg-[#568dff]"}`} style={{ width: `${progress}%` }} />
+                <div className={`h-full transition-all ${stage === "failed" ? "bg-[#F06A6A]" : "bg-[#56B8C7]"}`} style={{ width: `${progress}%` }} />
               </div>
             </div>
           ) : null}

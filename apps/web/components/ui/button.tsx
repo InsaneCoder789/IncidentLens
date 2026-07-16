@@ -10,14 +10,14 @@ export function Button({ className, variant = "default", size = "md", ...props }
   return (
     <button
       className={cn(
-        "inline-flex items-center justify-center rounded-md border font-medium transition focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-50",
-        size === "sm" && "h-8 px-2.5 text-[11px]",
-        size === "md" && "h-9 px-3 text-xs",
-        size === "lg" && "h-10 px-4 text-sm",
-        variant === "default" && "border-accent bg-accent text-white hover:bg-[#0d63db]",
-        variant === "secondary" && "border-[#30363d] bg-panel text-slate-100 hover:bg-panel2",
-        variant === "ghost" && "border-transparent bg-transparent text-slate-200 hover:border-[#30363d] hover:bg-panel",
-        variant === "outline" && "border-[#30363d] bg-transparent text-slate-100 hover:bg-panel",
+        "inline-flex min-h-11 items-center justify-center rounded-[10px] border font-medium transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/50 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.98]",
+        size === "sm" && "h-11 px-3 text-xs md:h-9 md:min-h-9",
+        size === "md" && "h-11 px-4 text-xs",
+        size === "lg" && "h-12 px-5 text-sm",
+        variant === "default" && "border-accent/70 bg-accent text-[#071014] hover:bg-[#69c2cf]",
+        variant === "secondary" && "border-line/15 bg-panel2 text-text hover:border-line/25 hover:bg-panel3",
+        variant === "ghost" && "border-transparent bg-transparent text-muted hover:bg-panel2 hover:text-text",
+        variant === "outline" && "border-line/20 bg-transparent text-text hover:border-accent/35 hover:bg-accent/5",
         className,
       )}
       {...props}

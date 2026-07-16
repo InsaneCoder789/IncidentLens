@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, PlayCircle } from "lucide-react";
+import { Activity, ArrowLeft, Database, PlayCircle } from "lucide-react";
 import { ConfidenceGauge } from "@/components/confidence-gauge";
 import { ChunkList, EvidenceCitation, RetrievalStatusStrip, RootCauseHypothesisCard, SemanticSearchPanel } from "@/components/evidence-citation";
 import { EvidenceCard } from "@/components/evidence-card";
 import { IncidentTimeline } from "@/components/incident-timeline";
+import { PageIntro, SectionHeading } from "@/components/page-intro";
 import { InvestigationWorkspace } from "@/components/investigation-ui";
 import { MultimodalEvidenceCard, MultimodalUploadPanel } from "@/components/multimodal-evidence";
 import { SeverityBadge } from "@/components/severity-badge";
@@ -57,38 +58,43 @@ export default async function IncidentDetailPage({ params }: { params: Promise<{
   const textEvidence = evidence.filter((item) => !multimodalSourceTypes.has(item.source_type));
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[280px_minmax(0,1fr)_380px]">
-      <div className="space-y-4">
-        <Link href="/incidents" className="inline-flex items-center gap-2 text-xs text-slate-400 hover:text-slate-200">
+    <div>
+      <PageIntro
+        eyebrow={`INC-${String(incident.id).padStart(4, "0")} / ${incident.affected_service}`}
+        title={incident.title}
+        description="Evidence-grounded investigation workspace. Review the timeline, validate the report, and keep production-changing actions behind explicit approval."
+        meta={<div className="flex flex-wrap gap-2"><SeverityBadge severity={incident.severity} /><StatusBadge status={incident.status} /><span className="rounded-full border border-line/10 bg-panel px-2.5 py-1 font-mono text-[10px] text-muted">{evidence.length} evidence items</span></div>}
+        actions={<><Link href="/evidence"><Button variant="secondary"><Database className="mr-2 h-4 w-4" strokeWidth={1.5} />Evidence</Button></Link><Link href={`/incidents/${incident.id}/trace`}><Button><Activity className="mr-2 h-4 w-4" strokeWidth={1.5} />Inspect trace</Button></Link></>}
+      />
+    <div className="grid min-w-0 gap-5 xl:grid-cols-[240px_minmax(0,1fr)] 2xl:grid-cols-[280px_minmax(0,1fr)_380px]">
+      <div className="min-w-0 space-y-4">
+        <Link href="/incidents" className="inline-flex min-h-11 items-center gap-2 text-xs text-muted transition-colors hover:text-text">
           <ArrowLeft className="h-3.5 w-3.5" />
           Back to incidents
         </Link>
 
         <Card>
           <CardHeader>
-            <div className="label-caps text-slate-500">Metadata</div>
+            <SectionHeading eyebrow="Context" title="Incident metadata" />
           </CardHeader>
-          <CardContent className="space-y-3 text-xs text-slate-300">
-            <div className="flex items-center justify-between"><span className="text-slate-500">Status</span><StatusBadge status={incident.status} /></div>
-            <div className="flex items-center justify-between"><span className="text-slate-500">Severity</span><SeverityBadge severity={incident.severity} /></div>
-            <div className="flex items-center justify-between"><span className="text-slate-500">Service</span><span className="font-mono">{incident.affected_service}</span></div>
-            <div className="flex items-center justify-between"><span className="text-slate-500">Owner</span><span>{incident.owner ?? "unassigned"}</span></div>
-            <div className="flex items-center justify-between"><span className="text-slate-500">Evidence</span><span>{evidence.length} items</span></div>
+          <CardContent className="divide-y divide-line/8 text-xs text-text">
+            <div className="flex items-center justify-between py-2.5"><span className="text-muted">Status</span><StatusBadge status={incident.status} /></div>
+            <div className="flex items-center justify-between py-2.5"><span className="text-muted">Severity</span><SeverityBadge severity={incident.severity} /></div>
+            <div className="flex items-center justify-between py-2.5"><span className="text-muted">Service</span><span className="font-mono">{incident.affected_service}</span></div>
+            <div className="flex items-center justify-between py-2.5"><span className="text-muted">Owner</span><span>{incident.owner ?? "unassigned"}</span></div>
+            <div className="flex items-center justify-between py-2.5"><span className="text-muted">Evidence</span><span>{evidence.length} items</span></div>
           </CardContent>
         </Card>
 
         <IncidentTimeline events={incidentTimeline} />
       </div>
 
-      <div className="space-y-4">
+      <div className="min-w-0 space-y-4">
         <Card>
           <CardHeader>
             <div className="flex items-start justify-between gap-4">
               <div>
-                <div className="text-2xl font-semibold leading-tight text-white">{incident.title}</div>
-                <div className="mt-2 font-mono text-[11px] uppercase tracking-[0.08em] text-slate-500">
-                  INC-{String(incident.id).padStart(4, "0")} · investigation workspace
-                </div>
+                <SectionHeading eyebrow="Synthesis" title="Investigation report" description="The persisted report remains linked to supporting evidence and agent telemetry." />
               </div>
               <Link href={`/incidents/${incident.id}/trace`}>
                 <Button variant="secondary" className="gap-2">
@@ -99,9 +105,9 @@ export default async function IncidentDetailPage({ params }: { params: Promise<{
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="rounded-xl border border-line bg-[#10131b] px-4 py-4">
-              <div className="label-caps text-slate-500">Current Investigation Summary</div>
-              <div className="mt-3 text-sm leading-6 text-white">
+            <div className="rounded-xl border border-accent/12 bg-accent/[0.045] px-4 py-4">
+              <div className="label-caps text-accent">Current finding</div>
+              <div className="mt-3 text-sm leading-6 text-text">
                 {report
                   ? `Latest report identifies ${report.selected_root_cause} as the likely cause with ${Math.round(report.confidence_score * 100)}% confidence.`
                   : "No incident report has been generated yet. Run the investigation to create a persisted, evidence-grounded report."}
@@ -113,7 +119,7 @@ export default async function IncidentDetailPage({ params }: { params: Promise<{
             <MultimodalUploadPanel incidentId={incident.id} compact />
 
             <div className="space-y-3">
-              <div className="label-caps text-slate-500">Evidence Processing</div>
+              <div className="label-caps text-muted">Text evidence</div>
               <div className="grid gap-3 md:grid-cols-2">
                 {textEvidence.map((item) => (
                   <EvidenceCard
@@ -127,8 +133,8 @@ export default async function IncidentDetailPage({ params }: { params: Promise<{
 
             <div className="space-y-3">
               <div>
-                <div className="label-caps text-slate-500">Multimodal Evidence</div>
-                <div className="mt-1 text-xs text-slate-500">Extracted visual, document, and audio evidence available to the latest investigation.</div>
+                <div className="label-caps text-muted">Multimodal evidence</div>
+                <div className="mt-1 text-xs text-muted">Extracted visual, document, and audio evidence available to the latest investigation.</div>
               </div>
               <div className="grid gap-3 md:grid-cols-2">
                 {multimodalEvidence.map((item) => {
@@ -146,8 +152,8 @@ export default async function IncidentDetailPage({ params }: { params: Promise<{
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-xl border border-line bg-[#10131b] px-4 py-4">
-                <div className="label-caps text-slate-500">Chunk Store</div>
+              <div className="rounded-xl border border-line/10 bg-bg/35 px-4 py-4">
+                <div className="label-caps text-muted">Chunk store</div>
                 <div className="mt-3">
                   <ChunkList chunks={chunks} />
                 </div>
@@ -156,7 +162,7 @@ export default async function IncidentDetailPage({ params }: { params: Promise<{
             </div>
 
             <div className="space-y-3">
-              <div className="label-caps text-slate-500">Root Cause Hypotheses</div>
+              <div className="label-caps text-muted">Root cause hypotheses</div>
               {activeHypotheses.map((hypothesis) => (
                 <RootCauseHypothesisCard key={hypothesis.id} {...hypothesis} />
               ))}
@@ -165,7 +171,7 @@ export default async function IncidentDetailPage({ params }: { params: Promise<{
         </Card>
       </div>
 
-      <div className="space-y-4">
+      <div className="min-w-0 space-y-4 xl:col-span-2 2xl:col-span-1">
         <ConfidenceGauge value={report?.confidence_score ?? incident.latest_confidence_score ?? 0.86} />
         <InvestigationWorkspace
           incidentId={incident.id}
@@ -174,7 +180,7 @@ export default async function IncidentDetailPage({ params }: { params: Promise<{
           citationSourceTypes={citationSourceTypes}
         />
         <Card>
-          <CardHeader><div className="text-sm font-medium text-white">Key Evidence</div></CardHeader>
+          <CardHeader><SectionHeading eyebrow="Grounding" title="Key evidence" /></CardHeader>
           <CardContent className="space-y-3">
             {retrieval.results.slice(0, 6).map((result) => (
               <EvidenceCitation
@@ -189,6 +195,7 @@ export default async function IncidentDetailPage({ params }: { params: Promise<{
           </CardContent>
         </Card>
       </div>
+    </div>
     </div>
   );
 }
