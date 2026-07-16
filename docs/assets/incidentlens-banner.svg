@@ -1,41 +1,65 @@
-<svg width="1280" height="320" viewBox="0 0 1280 320" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="1280" height="320" rx="24" fill="#07111F"/>
-  <rect x="24" y="24" width="1232" height="272" rx="18" fill="#0B1627" stroke="#18324F"/>
-  <path d="M0 244C179.242 189.408 323.904 180.61 433.986 217.606C544.068 254.602 650.981 264.131 754.724 246.192C858.466 228.253 1033.56 183.867 1280 113.036V320H0V244Z" fill="url(#paint0_linear_0_1)" fill-opacity="0.25"/>
-  <path d="M65 91H229" stroke="#17314F" stroke-width="2"/>
-  <path d="M65 229H229" stroke="#17314F" stroke-width="2"/>
-  <rect x="65" y="111" width="164" height="98" rx="14" fill="#091321" stroke="#214A73"/>
-  <circle cx="103" cy="144" r="10" fill="#10B981"/>
-  <circle cx="103" cy="174" r="10" fill="#F97316"/>
-  <circle cx="103" cy="204" r="10" fill="#EF4444"/>
-  <path d="M124 144H196" stroke="#2C5C8D" stroke-width="6" stroke-linecap="round"/>
-  <path d="M124 174H182" stroke="#2C5C8D" stroke-width="6" stroke-linecap="round"/>
-  <path d="M124 204H210" stroke="#2C5C8D" stroke-width="6" stroke-linecap="round"/>
-  <rect x="287" y="78" width="274" height="164" rx="18" fill="#091321" stroke="#214A73"/>
-  <rect x="309" y="102" width="230" height="18" rx="9" fill="#123A5F"/>
-  <rect x="309" y="138" width="96" height="74" rx="12" fill="#0F2438" stroke="#17314F"/>
-  <rect x="421" y="138" width="118" height="16" rx="8" fill="#0EA5E9" fill-opacity="0.35"/>
-  <rect x="421" y="168" width="98" height="12" rx="6" fill="#17314F"/>
-  <rect x="421" y="190" width="74" height="12" rx="6" fill="#17314F"/>
-  <path d="M447 165C463.569 165 477 151.569 477 135C477 118.431 463.569 105 447 105C430.431 105 417 118.431 417 135C417 151.569 430.431 165 447 165Z" fill="#38BDF8" fill-opacity="0.18"/>
-  <path d="M713 89L775 124L713 159L651 124L713 89Z" fill="#0B2740" stroke="#2A86C7" stroke-width="2"/>
-  <path d="M713 159L775 194L713 229L651 194L713 159Z" fill="#0B2740" stroke="#2A86C7" stroke-width="2"/>
-  <path d="M775 124L837 159L775 194L713 159L775 124Z" fill="#0E3353" stroke="#2A86C7" stroke-width="2"/>
-  <path d="M651 124L713 159L651 194L589 159L651 124Z" fill="#091F34" stroke="#2A86C7" stroke-width="2"/>
-  <path d="M851 103H1029" stroke="#17314F" stroke-width="2"/>
-  <rect x="851" y="124" width="364" height="114" rx="16" fill="#091321" stroke="#214A73"/>
-  <rect x="873" y="148" width="132" height="68" rx="10" fill="#0F2438" stroke="#17314F"/>
-  <path d="M889 198L913 176L933 188L965 156L989 170" stroke="#38BDF8" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-  <rect x="1025" y="146" width="168" height="16" rx="8" fill="#17314F"/>
-  <rect x="1025" y="174" width="146" height="12" rx="6" fill="#17314F"/>
-  <rect x="1025" y="198" width="110" height="12" rx="6" fill="#17314F"/>
-  <text x="287" y="56" fill="#7DD3FC" font-family="Arial, Helvetica, sans-serif" font-size="16" letter-spacing="2.4">INCIDENTLENS AI</text>
-  <text x="287" y="286" fill="#C7D8EA" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="700">Multimodal AI SRE Copilot for Incident Intelligence</text>
-  <text x="287" y="309" fill="#7F97B3" font-family="Arial, Helvetica, sans-serif" font-size="18">RAG, investigation workflows, grounded reports, and Stitch-aligned engineering dashboards</text>
-  <defs>
-    <linearGradient id="paint0_linear_0_1" x1="147" y1="148" x2="1118" y2="320" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#0EA5E9"/>
-      <stop offset="1" stop-color="#22D3EE"/>
-    </linearGradient>
-  </defs>
+<svg width="1600" height="500" viewBox="0 0 1600 500" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title description">
+  <title id="title">IncidentLens AI</title>
+  <desc id="description">Incident intelligence for evidence-grounded investigation and controlled response.</desc>
+
+  <rect width="1600" height="500" rx="28" fill="#090D12"/>
+  <rect x="1" y="1" width="1598" height="498" rx="27" stroke="#26313B" stroke-opacity="0.9"/>
+
+  <g opacity="0.45">
+    <path d="M80 0V500M160 0V500M240 0V500M320 0V500M400 0V500M480 0V500M560 0V500M640 0V500M720 0V500M800 0V500M880 0V500M960 0V500M1040 0V500M1120 0V500M1200 0V500M1280 0V500M1360 0V500M1440 0V500M1520 0V500" stroke="#172029"/>
+    <path d="M0 100H1600M0 200H1600M0 300H1600M0 400H1600" stroke="#172029"/>
+  </g>
+
+  <g transform="translate(82 72)">
+    <rect width="58" height="58" rx="16" fill="#111820" stroke="#33404B"/>
+    <path d="M13 30.5C17.8 19.8 24.4 14.5 32.7 14.5C39 14.5 43.7 17.5 46.8 23.5" stroke="#748391" stroke-width="2" stroke-linecap="round"/>
+    <path d="M45 27.5C40.2 38.2 33.6 43.5 25.3 43.5C19 43.5 14.3 40.5 11.2 34.5" stroke="#56B8C7" stroke-width="2.5" stroke-linecap="round"/>
+    <circle cx="29" cy="29" r="7.5" stroke="#E8EDF2" stroke-width="2"/>
+    <circle cx="29" cy="29" r="2.5" fill="#56B8C7"/>
+  </g>
+
+  <text x="160" y="92" fill="#E8EDF2" font-family="Geist, ui-sans-serif, sans-serif" font-size="22" font-weight="650" letter-spacing="-0.4">IncidentLens</text>
+  <text x="160" y="119" fill="#7D8A99" font-family="JetBrains Mono, ui-monospace, monospace" font-size="10" font-weight="500" letter-spacing="2.1">INCIDENT INTELLIGENCE</text>
+
+  <text x="80" y="245" fill="#F2F5F7" font-family="Geist, ui-sans-serif, sans-serif" font-size="64" font-weight="620" letter-spacing="-2.8">Evidence in.</text>
+  <text x="80" y="316" fill="#93A1AE" font-family="Geist, ui-sans-serif, sans-serif" font-size="64" font-weight="620" letter-spacing="-2.8">Decisions out.</text>
+  <text x="84" y="368" fill="#7D8A99" font-family="Geist, ui-sans-serif, sans-serif" font-size="18" font-weight="430" letter-spacing="0.1">Grounded investigation, explainable reasoning, controlled response.</text>
+
+  <g transform="translate(84 417)">
+    <circle cx="5" cy="5" r="5" fill="#56B8C7"/>
+    <text x="22" y="10" fill="#B8C3CC" font-family="JetBrains Mono, ui-monospace, monospace" font-size="12" font-weight="500" letter-spacing="1.3">RAG</text>
+    <path d="M76 5H108" stroke="#33404B"/>
+    <text x="124" y="10" fill="#B8C3CC" font-family="JetBrains Mono, ui-monospace, monospace" font-size="12" font-weight="500" letter-spacing="1.3">AGENT TRACE</text>
+    <path d="M249 5H281" stroke="#33404B"/>
+    <text x="297" y="10" fill="#B8C3CC" font-family="JetBrains Mono, ui-monospace, monospace" font-size="12" font-weight="500" letter-spacing="1.3">EVALUATION</text>
+    <path d="M413 5H445" stroke="#33404B"/>
+    <text x="461" y="10" fill="#B8C3CC" font-family="JetBrains Mono, ui-monospace, monospace" font-size="12" font-weight="500" letter-spacing="1.3">GOVERNANCE</text>
+  </g>
+
+  <g transform="translate(940 68)">
+    <text x="0" y="12" fill="#64717D" font-family="JetBrains Mono, ui-monospace, monospace" font-size="10" font-weight="500" letter-spacing="1.5">INCIDENT / PAYMENT API</text>
+    <text x="492" y="12" fill="#DE786F" font-family="JetBrains Mono, ui-monospace, monospace" font-size="10" font-weight="600" letter-spacing="1.5">SEV-1</text>
+    <path d="M0 35H560" stroke="#2A343E"/>
+
+    <path d="M0 154H560" stroke="#202A33"/>
+    <path d="M0 234H560" stroke="#202A33"/>
+    <path d="M0 314H560" stroke="#202A33"/>
+    <path d="M80 75V354M160 75V354M240 75V354M320 75V354M400 75V354M480 75V354" stroke="#182129"/>
+
+    <path d="M0 296C39 294 53 291 82 293C113 295 125 290 159 292C197 294 211 287 239 289C273 292 284 279 319 281C348 283 363 241 399 244C428 246 447 128 480 133C511 138 529 102 560 108" stroke="#56B8C7" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M0 316C42 315 61 310 94 312C129 314 145 307 180 309C216 311 236 302 269 304C306 306 327 297 360 299C399 302 417 289 450 291C492 293 518 275 560 278" stroke="#748391" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="4 8"/>
+
+    <path d="M480 76V354" stroke="#DE786F" stroke-width="1.5" stroke-dasharray="3 6"/>
+    <circle cx="480" cy="133" r="6" fill="#090D12" stroke="#DE786F" stroke-width="3"/>
+    <rect x="374" y="52" width="106" height="28" rx="6" fill="#25191A" stroke="#6A3332"/>
+    <text x="387" y="70" fill="#E89A92" font-family="JetBrains Mono, ui-monospace, monospace" font-size="10" font-weight="600" letter-spacing="0.8">REGRESSION</text>
+
+    <circle cx="399" cy="244" r="5" fill="#090D12" stroke="#56B8C7" stroke-width="2.5"/>
+    <rect x="282" y="205" width="117" height="26" rx="6" fill="#101B21" stroke="#2B5962"/>
+    <text x="294" y="222" fill="#8CD0DA" font-family="JetBrains Mono, ui-monospace, monospace" font-size="9" font-weight="600" letter-spacing="0.8">SIGNAL FOUND</text>
+
+    <text x="0" y="385" fill="#64717D" font-family="JetBrains Mono, ui-monospace, monospace" font-size="10" letter-spacing="1.2">09:40</text>
+    <text x="256" y="385" fill="#64717D" font-family="JetBrains Mono, ui-monospace, monospace" font-size="10" letter-spacing="1.2">10:00</text>
+    <text x="518" y="385" fill="#64717D" font-family="JetBrains Mono, ui-monospace, monospace" font-size="10" letter-spacing="1.2">10:20</text>
+  </g>
 </svg>

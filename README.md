@@ -443,7 +443,3 @@ The expected report selects the webhook validation regression, cites the support
 | [`docs/eval-design.md`](docs/eval-design.md) | datasets, metrics, execution, and regression analysis |
 | [`docs/llmops.md`](docs/llmops.md) | model routing, prompts, tracing, latency, tokens, and cost |
 | [`docs/multimodal-design.md`](docs/multimodal-design.md) | Phase 7 extraction, storage, retrieval, and frontend behavior |
-
-## Project Status
-
-Phase 7 is implemented and verified. The current repository includes the production-style frontend, FastAPI contracts, deterministic local data and model paths, multimodal retrieval, persisted agent reports and traces, evaluation history, and LLMOps controls described above.
