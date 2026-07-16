@@ -1,8 +1,8 @@
 ![IncidentLens AI banner](docs/assets/incidentlens-banner.svg)
 
-# IncidentLens AI
+# IncidentLens 
 
-IncidentLens AI is a production-style incident intelligence platform for Site Reliability Engineering teams. It combines multimodal evidence ingestion, retrieval-augmented generation, multi-agent investigation, evaluation, and LLMOps visibility in one approval-aware workflow.
+IncidentLens is a production-style incident intelligence platform for Site Reliability Engineering teams. It combines multimodal evidence ingestion, retrieval-augmented generation, multi-agent investigation, evaluation, and LLMOps visibility in one approval-aware workflow.
 
 The repository is complete through Phase 7 and runs locally in deterministic mock mode without paid model APIs.
 
