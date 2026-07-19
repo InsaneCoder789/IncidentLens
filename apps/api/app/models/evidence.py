@@ -66,7 +66,7 @@ class EvidenceChunk(Base):
     chunk_index: Mapped[int] = mapped_column(Integer, nullable=False)
     citation_id: Mapped[str] = mapped_column(String(32), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
-    embedding: Mapped[list[float] | None] = mapped_column(JSON().with_variant(Vector(384), "postgresql"), nullable=True)
+    embedding: Mapped[list[float] | None] = mapped_column(Vector(384).with_variant(JSON(), "sqlite"), nullable=True)
     token_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     metadata_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False)
