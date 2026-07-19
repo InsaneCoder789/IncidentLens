@@ -170,7 +170,7 @@ export function MultimodalEvidenceCard({
           <div className="mt-1 text-[11px] text-slate-500">
             {metadataString(evidence, "filename") ?? "Seeded evidence"} · {Number(evidence.metadata_json.file_size_bytes ?? 0) > 0
               ? `${Math.round(Number(evidence.metadata_json.file_size_bytes) / 1024)} KB`
-              : "mock source"}
+              : "provider metadata unavailable"}
           </div>
         </div>
         <div className="flex flex-wrap gap-2">

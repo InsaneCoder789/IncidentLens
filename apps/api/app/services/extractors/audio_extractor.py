@@ -3,6 +3,10 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from pathlib import Path
 
+import httpx
+
+from app.core.config import get_settings
+
 
 class AudioTranscriptionProvider(ABC):
     @abstractmethod
@@ -10,27 +14,29 @@ class AudioTranscriptionProvider(ABC):
         raise NotImplementedError
 
 
-class MockAudioTranscriptionProvider(AudioTranscriptionProvider):
+class OpenAIAudioTranscriptionProvider(AudioTranscriptionProvider):
     def transcribe(self, *, path: Path, description: str = "") -> tuple[str, float, list[str]]:
-        haystack = f"{path.name} {description}".lower()
-        if any(token in haystack for token in ("payment", "webhook", "war-room", "war_room", "incident")):
-            return (
-                "The payment failures started after the webhook validation deployment. "
-                "The team should check payment_webhook_strict_mode and compare the webhook success rate "
-                "before and after v1.42.0.",
-                0.87,
-                [],
+        settings = get_settings()
+        if settings.llm_api_key is None:
+            raise RuntimeError("LLM_API_KEY is required for audio transcription")
+        with path.open("rb") as stream:
+            response = httpx.post(
+                f"{settings.llm_base_url.rstrip('/')}/audio/transcriptions",
+                headers={"Authorization": f"Bearer {settings.llm_api_key.get_secret_value()}"},
+                files={"file": (path.name, stream)},
+                data={"model": settings.transcription_model_name, "response_format": "json", "prompt": description},
+                timeout=120,
             )
-        transcript = description.strip() or (
-            "Voice note uploaded successfully. Mock transcription could not infer incident-specific speech "
-            "from the filename."
-        )
-        return transcript, 0.55, ["Mock ASR uses filename and optional description signals."]
+        response.raise_for_status()
+        transcript = str(response.json()["text"]).strip()
+        if not transcript:
+            raise RuntimeError("Audio provider returned an empty transcript")
+        return transcript, 1.0, []
 
 
 class AudioEvidenceExtractor:
     def __init__(self, provider: AudioTranscriptionProvider | None = None) -> None:
-        self.provider = provider or MockAudioTranscriptionProvider()
+        self.provider = provider or OpenAIAudioTranscriptionProvider()
 
     def extract(self, *, path: Path, description: str = "") -> dict:
         transcript, confidence, warnings = self.provider.transcribe(path=path, description=description)

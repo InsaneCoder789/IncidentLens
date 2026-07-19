@@ -20,7 +20,7 @@ def read_llmops_overview(db: Session = Depends(get_db)) -> LlmopsOverviewRead:
     healthy = sum(1 for item in integrations if item.status == "healthy")
 
     return LlmopsOverviewRead(
-        mock_mode=settings.mock_mode,
+        provider_configured=settings.llm_api_key is not None,
         reasoning_model_primary=settings.reasoning_model_primary,
         reasoning_model_fallback=settings.reasoning_model_fallback,
         embedding_model_name=settings.embedding_model_name,

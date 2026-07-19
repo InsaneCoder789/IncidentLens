@@ -57,6 +57,12 @@ async def run_investigation(db: Session, incident_id: int) -> IncidentReport:
         selected_root_cause=state.selected_root_cause or "Insufficient evidence",
         confidence_score=confidence,
         evaluation_score=state.evaluation.quality_score if state.evaluation else 0.0,
+        analysis_json={
+            "hypotheses": [item.model_dump() for item in state.hypotheses],
+            "missing_evidence": state.missing_evidence,
+            "remediation_plan": state.remediation_plan.model_dump() if state.remediation_plan else None,
+            "evaluation": state.evaluation.model_dump() if state.evaluation else None,
+        },
     )
     db.add(report)
     db.add(incident)

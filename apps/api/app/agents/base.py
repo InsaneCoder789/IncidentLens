@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.agents.state import InvestigationState
 from app.models.investigation import AgentRun, ModelRun
-from app.services.model_router import ModelRouter
+from app.services.model_router import LLMResult, ModelRouter
 
 
 class BaseAgent(ABC):
@@ -18,6 +18,16 @@ class BaseAgent(ABC):
     def __init__(self, db: Session, router: ModelRouter) -> None:
         self.db = db
         self.router = router
+        self._model_result: LLMResult | None = None
+
+    def generate(self, content: dict) -> dict:
+        self._model_result = self.router.run_structured(
+            db=self.db,
+            prompt_file=self.prompt_file,
+            task_name=self.name,
+            content=content,
+        )
+        return self._model_result.content
 
     async def run(self, state: InvestigationState) -> InvestigationState:
         started = datetime.now(UTC)
@@ -27,7 +37,7 @@ class BaseAgent(ABC):
             status="running",
             input_summary=self.input_summary(state),
             output_summary="",
-            model_name="mock-llm",
+            model_name="unassigned",
             prompt_version="pending",
             started_at=started,
         )
@@ -42,11 +52,11 @@ class BaseAgent(ABC):
             output_summary = self.output_summary(result)
             prompt = self.router.load_prompt(self.db, self.prompt_file)
             prompt_version = f'{prompt["name"]}_{prompt["version"]}'
-            model_result = self.router.run_structured(
+            model_result = self._model_result or self.router.run_structured(
                 db=self.db,
                 prompt_file=self.prompt_file,
                 task_name=self.name,
-                content={"input_summary": agent_run.input_summary, "output_summary": output_summary},
+                content={"incident": result.model_dump(exclude={"report_markdown", "active_agent_run_id"}), "output_summary": output_summary},
             )
 
             agent_run.status = "completed"

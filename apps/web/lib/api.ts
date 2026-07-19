@@ -1,114 +1,146 @@
 import type {
+  ApprovalRequest,
+  DashboardData,
   EvidenceChunk,
   EvidenceItem,
   EvidenceProcessResponse,
   EvidenceUploadResponse,
   EvalRun,
   EvalRunTriggerResponse,
+  Incident,
+  IncidentCreate,
+  IncidentEvent,
   IncidentReport,
   IncidentTrace,
+  IncidentUpdate,
   IntegrationHealth,
   IntegrationImportResponse,
-  Incident,
-  LlmopsOverview,
   InvestigationRunResponse,
+  LlmopsOverview,
   ProcessAllEvidenceResponse,
   RetrievalSearchRequest,
   RetrievalSearchResponse,
+  RuntimeSettings,
 } from "@/lib/types";
-import {
-  evidence as mockEvidence,
-  incidentChunks as mockIncidentChunks,
-  incidents as mockIncidents,
-  mockIncidentReport,
-  mockIncidentTrace,
-  mockInvestigationRun,
-  retrievalResults as mockRetrievalResults,
-} from "@/lib/mock-data";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-const API_TIMEOUT_MS = 1200;
+const SERVER_API_URL = process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const CLIENT_API_URL = "/api/backend";
+const API_TIMEOUT_MS = 10_000;
+
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
+function apiUrl(path: string): string {
+  return `${typeof window === "undefined" ? SERVER_API_URL : CLIENT_API_URL}${path}`;
+}
 
 async function requestJson<T>(path: string, init?: RequestInit, timeoutMs = API_TIMEOUT_MS): Promise<T> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
   const isFormData = typeof FormData !== "undefined" && init?.body instanceof FormData;
+  const serverToken = typeof window === "undefined" ? process.env.BACKEND_API_TOKEN : undefined;
+
   try {
-    const response = await fetch(`${API_URL}${path}`, {
+    const response = await fetch(apiUrl(path), {
       ...init,
       headers: {
         ...(isFormData ? {} : { "Content-Type": "application/json" }),
+        ...(serverToken ? { Authorization: `Bearer ${serverToken}` } : {}),
         ...(init?.headers ?? {}),
       },
       cache: "no-store",
       signal: controller.signal,
     });
-    if (!response.ok) throw new Error(`Request failed: ${response.status}`);
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => null)) as { detail?: string } | null;
+      throw new ApiError(payload?.detail ?? `Request failed with status ${response.status}`, response.status);
+    }
+    if (response.status === 204) return undefined as T;
     return (await response.json()) as T;
-  } catch {
-    throw new Error("API unavailable");
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new ApiError("The API request timed out", 504);
+    }
+    throw new ApiError("The IncidentLens API is unavailable", 503);
   } finally {
     clearTimeout(timeoutId);
   }
 }
 
-function mockSearchResults(request: RetrievalSearchRequest): RetrievalSearchResponse {
-  const query = request.query.toLowerCase();
-  const results = mockRetrievalResults.filter((item) => {
-    const haystack = `${item.title} ${item.content} ${item.source_type}`.toLowerCase();
-    const matchesQuery = query.length === 0 || haystack.includes(query);
-    const matchesSource = !request.source_types?.length || request.source_types.includes(item.source_type);
-    const matchesMetadata =
-      !request.metadata_filters ||
-      Object.entries(request.metadata_filters).every(([key, value]) => String(item.metadata[key]) === String(value));
-    return matchesQuery && matchesSource && matchesMetadata;
-  });
-  return { query: request.query, results: results.slice(0, request.top_k ?? 8) };
+export async function getIncidents(): Promise<Incident[]> {
+  return requestJson<Incident[]>("/api/incidents");
 }
 
-export async function getIncidents(): Promise<Incident[]> {
-  try {
-    return await requestJson<Incident[]>("/api/incidents");
-  } catch {
-    return mockIncidents;
-  }
+export async function createIncident(payload: IncidentCreate): Promise<Incident> {
+  return requestJson<Incident>("/api/incidents", { method: "POST", body: JSON.stringify(payload) });
+}
+
+export async function updateIncident(id: number, payload: IncidentUpdate): Promise<Incident> {
+  return requestJson<Incident>(`/api/incidents/${id}`, { method: "PATCH", body: JSON.stringify(payload) });
+}
+
+export async function deleteIncident(id: number): Promise<void> {
+  return requestJson<void>(`/api/incidents/${id}`, { method: "DELETE" });
+}
+
+export async function getDashboard(): Promise<DashboardData> {
+  return requestJson<DashboardData>("/api/dashboard");
+}
+
+export async function getIncidentEvents(id: number): Promise<IncidentEvent[]> {
+  return requestJson<IncidentEvent[]>(`/api/incidents/${id}/events`);
+}
+
+export async function getApprovals(id: number): Promise<ApprovalRequest[]> {
+  return requestJson<ApprovalRequest[]>(`/api/incidents/${id}/approvals`);
+}
+
+export async function requestApproval(id: number, action: string, rationale = ""): Promise<ApprovalRequest> {
+  return requestJson<ApprovalRequest>(`/api/incidents/${id}/approvals`, {
+    method: "POST",
+    body: JSON.stringify({ action, rationale }),
+  });
+}
+
+export async function decideApproval(
+  approvalId: string,
+  decision: "approved" | "rejected" | "cancelled",
+  expectedVersion: number,
+  decisionNote = "",
+): Promise<ApprovalRequest> {
+  return requestJson<ApprovalRequest>(`/api/approvals/${approvalId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ decision, decision_note: decisionNote, expected_version: expectedVersion }),
+  });
 }
 
 export async function getIncident(id: number): Promise<Incident | undefined> {
   try {
     return await requestJson<Incident>(`/api/incidents/${id}`);
-  } catch {
-    return mockIncidents.find((incident) => incident.id === id);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return undefined;
+    throw error;
   }
 }
 
 export async function getIncidentEvidence(id: number): Promise<EvidenceItem[]> {
-  try {
-    return await requestJson<EvidenceItem[]>(`/api/incidents/${id}/evidence`);
-  } catch {
-    return mockEvidence.filter((item) => item.incident_id === id);
-  }
+  return requestJson<EvidenceItem[]>(`/api/incidents/${id}/evidence`);
 }
 
 export async function getIncidentChunks(id: number): Promise<EvidenceChunk[]> {
-  try {
-    return await requestJson<EvidenceChunk[]>(`/api/incidents/${id}/chunks`);
-  } catch {
-    return mockIncidentChunks.filter((item) => item.incident_id === id);
-  }
+  return requestJson<EvidenceChunk[]>(`/api/incidents/${id}/chunks`);
 }
 
 export async function processEvidence(evidenceId: number): Promise<EvidenceProcessResponse> {
-  try {
-    return await requestJson<EvidenceProcessResponse>(`/api/evidence/${evidenceId}/process`, { method: "POST" });
-  } catch {
-    return {
-      evidence_id: evidenceId,
-      status: "completed",
-      chunks_created: 3,
-      embedding_status: "completed",
-    };
-  }
+  return requestJson<EvidenceProcessResponse>(`/api/evidence/${evidenceId}/process`, { method: "POST" });
 }
 
 export async function uploadEvidence(
@@ -128,17 +160,19 @@ export async function uploadEvidence(
   if (options?.description) formData.append("description", options.description);
   if (options?.sourceType) formData.append("source_type", options.sourceType);
   formData.append("process_immediately", String(options?.processImmediately ?? true));
+
   if (typeof XMLHttpRequest === "undefined") {
     return requestJson<EvidenceUploadResponse>(
       `/api/incidents/${incidentId}/evidence/upload`,
       { method: "POST", body: formData },
-      30_000,
+      60_000,
     );
   }
+
   return new Promise((resolve, reject) => {
     const request = new XMLHttpRequest();
-    request.open("POST", `${API_URL}/api/incidents/${incidentId}/evidence/upload`);
-    request.timeout = 30_000;
+    request.open("POST", apiUrl(`/api/incidents/${incidentId}/evidence/upload`));
+    request.timeout = 60_000;
     request.upload.onprogress = (event) => {
       if (event.lengthComputable) options?.onProgress?.(Math.round((event.loaded / event.total) * 90));
     };
@@ -150,147 +184,77 @@ export async function uploadEvidence(
       }
       try {
         const payload = JSON.parse(request.responseText) as { detail?: string };
-        reject(new Error(payload.detail ?? `Upload failed: ${request.status}`));
+        reject(new ApiError(payload.detail ?? `Upload failed with status ${request.status}`, request.status));
       } catch {
-        reject(new Error(`Upload failed: ${request.status}`));
+        reject(new ApiError(`Upload failed with status ${request.status}`, request.status));
       }
     };
-    request.onerror = () => reject(new Error("Could not reach the evidence API."));
-    request.ontimeout = () => reject(new Error("Evidence processing timed out."));
+    request.onerror = () => reject(new ApiError("Could not reach the evidence API", 503));
+    request.ontimeout = () => reject(new ApiError("Evidence upload timed out", 504));
     request.send(formData);
   });
 }
 
 export function evidenceFileUrl(evidenceId: number): string {
-  return `${API_URL}/api/evidence/${evidenceId}/file`;
+  return `${CLIENT_API_URL}/api/evidence/${evidenceId}/file`;
 }
 
 export async function processAllEvidence(incidentId: number): Promise<ProcessAllEvidenceResponse> {
-  try {
-    return await requestJson<ProcessAllEvidenceResponse>(`/api/incidents/${incidentId}/evidence/process-all`, { method: "POST" });
-  } catch {
-    const related = mockEvidence.filter((item) => item.incident_id === incidentId);
-    return {
-      incident_id: incidentId,
-      processed: related.length,
-      failed: 0,
-      chunks_created: related.length * 2,
-    };
-  }
+  return requestJson<ProcessAllEvidenceResponse>(`/api/incidents/${incidentId}/evidence/process-all`, { method: "POST" });
 }
 
 export async function searchEvidence(payload: RetrievalSearchRequest): Promise<RetrievalSearchResponse> {
-  try {
-    return await requestJson<RetrievalSearchResponse>("/api/retrieval/search", {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
-  } catch {
-    return mockSearchResults(payload);
-  }
+  return requestJson<RetrievalSearchResponse>("/api/retrieval/search", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 }
 
 export async function runInvestigation(incidentId: number): Promise<InvestigationRunResponse> {
-  try {
-    return await requestJson<InvestigationRunResponse>(`/api/incidents/${incidentId}/investigate`, { method: "POST" });
-  } catch {
-    return mockInvestigationRun;
-  }
+  return requestJson<InvestigationRunResponse>(`/api/incidents/${incidentId}/investigate`, { method: "POST" }, 60_000);
 }
 
 export async function getIncidentReport(incidentId: number): Promise<IncidentReport | undefined> {
   try {
     return await requestJson<IncidentReport>(`/api/incidents/${incidentId}/report`);
-  } catch {
-    return Number(mockIncidentReport.incident_id) === incidentId ? mockIncidentReport : undefined;
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return undefined;
+    throw error;
   }
 }
 
 export async function getIncidentTrace(incidentId: number): Promise<IncidentTrace> {
-  try {
-    return await requestJson<IncidentTrace>(`/api/incidents/${incidentId}/trace`);
-  } catch {
-    return mockIncidentTrace;
-  }
+  return requestJson<IncidentTrace>(`/api/incidents/${incidentId}/trace`);
 }
 
 export async function getIntegrationHealth(): Promise<IntegrationHealth[]> {
-  try {
-    return await requestJson<IntegrationHealth[]>("/api/integrations/health");
-  } catch {
-    return [
-      {
-        key: "github",
-        label: "GitHub",
-        status: "healthy",
-        detail: "Mock PR and deployment history are available.",
-        source_types: ["github_pr", "github_commit"],
-      },
-      {
-        key: "sentry",
-        label: "Sentry",
-        status: "healthy",
-        detail: "SignatureMismatchError traces are indexed for the seeded incident.",
-        source_types: ["sentry_issue"],
-      },
-      {
-        key: "prometheus",
-        label: "Prometheus",
-        status: "healthy",
-        detail: "Error-rate and latency snapshots are available.",
-        source_types: ["prometheus_metric"],
-      },
-      {
-        key: "statuspage",
-        label: "Statuspage",
-        status: "healthy",
-        detail: "Provider availability feed is operational.",
-        source_types: ["statuspage"],
-      },
-      {
-        key: "runbook",
-        label: "Runbook Search",
-        status: "healthy",
-        detail: "Runbook and prior-incident knowledge is available.",
-        source_types: ["runbook", "previous_incident"],
-      },
-    ];
-  }
+  return requestJson<IntegrationHealth[]>("/api/integrations/health");
 }
 
 export async function importIntegrationEvidence(incidentId: number, integrationKey: string): Promise<IntegrationImportResponse> {
-  try {
-    return await requestJson<IntegrationImportResponse>(`/api/integrations/${integrationKey}/incidents/${incidentId}/import`, {
-      method: "POST",
-    });
-  } catch {
-    return {
-      incident_id: incidentId,
-      integration_key: integrationKey,
-      imported: 1,
-      updated: 0,
-    };
-  }
+  return requestJson<IntegrationImportResponse>(`/api/integrations/${integrationKey}/incidents/${incidentId}/import`, {
+    method: "POST",
+  });
 }
 
 export async function getEvalRuns(): Promise<EvalRun[]> {
-  try {
-    return await requestJson<EvalRun[]>("/api/evals/history");
-  } catch {
-    return [];
-  }
+  return requestJson<EvalRun[]>("/api/evals/history");
 }
 
 export async function runEvalSuite(): Promise<EvalRunTriggerResponse> {
-  return requestJson<EvalRunTriggerResponse>("/api/evals/run", { method: "POST" });
+  return requestJson<EvalRunTriggerResponse>("/api/evals/run", { method: "POST" }, 60_000);
 }
 
-export async function getLlmopsOverview(): Promise<LlmopsOverview | null> {
-  try {
-    return await requestJson<LlmopsOverview>("/api/llmops/overview");
-  } catch {
-    return null;
-  }
+export async function getLlmopsOverview(): Promise<LlmopsOverview> {
+  return requestJson<LlmopsOverview>("/api/llmops/overview");
+}
+
+export async function getRuntimeSettings(): Promise<RuntimeSettings> {
+  return requestJson<RuntimeSettings>("/api/settings");
+}
+
+export async function updateRuntimeSettings(payload: Partial<RuntimeSettings>): Promise<RuntimeSettings> {
+  return requestJson<RuntimeSettings>("/api/settings", { method: "PATCH", body: JSON.stringify(payload) });
 }
 
 export function traceSummary(trace: IncidentTrace): { totalLatencyMs: number; totalCostUsd: number; completed: number; failed: number } {

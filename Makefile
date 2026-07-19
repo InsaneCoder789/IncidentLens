@@ -1,4 +1,4 @@
-.PHONY: setup dev dev-web dev-api seed seed-api test test-api test-web docker-up docker-down
+.PHONY: setup dev dev-web dev-api migrate test test-api test-web docker-up docker-down
 
 PYTHON=.venv/bin/python
 UVICORN=.venv/bin/uvicorn
@@ -17,10 +17,8 @@ dev-web:
 dev-api:
 	cd apps/api && ../../$(UVICORN) app.main:app --reload --host 0.0.0.0 --port 8000
 
-seed-api:
-	cd apps/api && ../../$(PYTHON) -m app.seed.demo
-
-seed: seed-api
+migrate:
+	cd apps/api && ../../$(PYTHON) -m alembic upgrade head
 
 test-api:
 	cd apps/api && ../../$(PYTHON) -m pytest -q

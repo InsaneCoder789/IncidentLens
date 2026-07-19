@@ -1,20 +1,23 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from pathlib import Path
+from typing import Any, Callable
 
+import httpx
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
 from app.models.evidence import EvidenceItem
+from app.models.incident import Incident
 
 
 @dataclass(slots=True)
 class IntegrationEvidenceRecord:
     source_type: str
     title: str
-    raw_content: str
-    normalized_content: str
+    content: str
     metadata_json: dict[str, Any]
 
 
@@ -27,244 +30,146 @@ class IntegrationHealthStatus:
     source_types: list[str]
 
 
-_INTEGRATION_FIXTURES: dict[str, dict[str, Any]] = {
-    "github": {
-        "label": "GitHub",
-        "status": "healthy",
-        "detail": "Mock pull request and deployment metadata available.",
-        "source_types": ["github_pr", "github_commit"],
-        "records": [
-            IntegrationEvidenceRecord(
-                source_type="github_pr",
-                title="PR #482 changed webhook validation",
-                raw_content=(
-                    "PR #482 title: Enforce strict webhook signature validation.\n"
-                    "Merged 17 minutes before incident start.\n"
-                    "Changed file: payments/webhook.py\n"
-                    "Release: v1.42.0\n"
-                    "Notes: introduced strict validation path and normalized digest comparison for webhook payloads."
-                ),
-                normalized_content=(
-                    "PR #482 introduced strict webhook signature validation in payments/webhook.py, "
-                    "merged 17 minutes before the incident, and shipped in release v1.42.0."
-                ),
-                metadata_json={"pr_number": 482, "release": "v1.42.0", "service": "payments-api", "file": "payments/webhook.py"},
-            )
-        ],
-    },
-    "sentry": {
-        "label": "Sentry",
-        "status": "healthy",
-        "detail": "SignatureMismatchError trace bundle ready for import.",
-        "source_types": ["sentry_issue"],
-        "records": [
-            IntegrationEvidenceRecord(
-                source_type="sentry_issue",
-                title="SignatureMismatchError in payments/webhook.py",
-                raw_content=(
-                    "Sentry issue: SignatureMismatchError affecting paid users after release v1.42.0.\n"
-                    "Service: payments-api\n"
-                    "File: payments/webhook.py\n"
-                    "First seen timestamp: 2026-07-02T06:17:12Z\n"
-                    "Affected users: 1240\n"
-                    "Stack trace snippet:\n"
-                    '  File "payments/webhook.py", line 184, in verify_signature\n'
-                    "    raise SignatureMismatchError('digest mismatch for normalized payload')"
-                ),
-                normalized_content=(
-                    "Sentry reported SignatureMismatchError after release v1.42.0 in payments/webhook.py. "
-                    "The error first appeared at 2026-07-02T06:17:12Z and impacted 1240 paid users. "
-                    "Stack trace points to verify_signature in the strict validation path."
-                ),
-                metadata_json={
-                    "release": "v1.42.0",
-                    "file": "payments/webhook.py",
-                    "first_seen_timestamp": "2026-07-02T06:17:12Z",
-                    "affected_users": 1240,
-                    "service": "payments-api",
-                },
-            )
-        ],
-    },
-    "prometheus": {
-        "label": "Prometheus",
-        "status": "healthy",
-        "detail": "Latency and error-rate snapshot available for payments-api.",
-        "source_types": ["prometheus_metric"],
-        "records": [
-            IntegrationEvidenceRecord(
-                source_type="prometheus_metric",
-                title="Payment service error rate spike",
-                raw_content=(
-                    "Prometheus metric report for payments-api.\n"
-                    "Deployment timestamp: 2026-07-02T06:10:55Z\n"
-                    "Error rate increased from 0.2% to 18.4%.\n"
-                    "P95 latency increased from 240ms to 1800ms.\n"
-                    "Payment completion rate dropped 37% within 10 minutes of deployment."
-                ),
-                normalized_content=(
-                    "Prometheus showed error rate increasing from 0.2% to 18.4%, P95 latency rising from 240ms to 1800ms, "
-                    "and payment completion dropping immediately after deployment."
-                ),
-                metadata_json={
-                    "error_rate_before": 0.2,
-                    "error_rate_after": 18.4,
-                    "p95_before_ms": 240,
-                    "p95_after_ms": 1800,
-                    "deployment_timestamp": "2026-07-02T06:10:55Z",
-                    "service": "payments-api",
-                },
-            )
-        ],
-    },
-    "statuspage": {
-        "label": "Statuspage",
-        "status": "healthy",
-        "detail": "Provider availability timeline reports operational status.",
-        "source_types": ["statuspage"],
-        "records": [
-            IntegrationEvidenceRecord(
-                source_type="statuspage",
-                title="Payment provider status operational",
-                raw_content=(
-                    "Payment provider operational during incident window.\n"
-                    "No active third-party outage.\n"
-                    "This reduces the likelihood of external provider failure."
-                ),
-                normalized_content=(
-                    "Statuspage reported the payment provider as operational with no active third-party outage, "
-                    "reducing the likelihood of an external dependency issue."
-                ),
-                metadata_json={"status": "operational", "provider": "Acme Payments", "service": "payments-api"},
-            )
-        ],
-    },
-    "runbook": {
-        "label": "Runbook Search",
-        "status": "healthy",
-        "detail": "Operational guidance and mitigation notes are indexed.",
-        "source_types": ["runbook", "previous_incident"],
-        "records": [
-            IntegrationEvidenceRecord(
-                source_type="runbook",
-                title="Payment webhook failure runbook",
-                raw_content=(
-                    "Payment webhook failure runbook.\n"
-                    "Signature mismatch section: inspect SignatureMismatchError and digest normalization changes.\n"
-                    "Feature flag: payment_webhook_strict_mode\n"
-                    "Recommended mitigation: disable strict mode or rollback the release."
-                ),
-                normalized_content=(
-                    "Runbook recommends disabling payment_webhook_strict_mode first or rolling back the release "
-                    "if SignatureMismatchError appears after deploy."
-                ),
-                metadata_json={"feature_flag": "payment_webhook_strict_mode", "service": "payments-api"},
-            ),
-            IntegrationEvidenceRecord(
-                source_type="previous_incident",
-                title="INC-104 similar signature mismatch regression",
-                raw_content=(
-                    "INC-104 involved similar SignatureMismatchError after enabling strict validation.\n"
-                    "Root cause: strict validation regression.\n"
-                    "Resolution: disabled strict validation flag and patched payload canonicalization."
-                ),
-                normalized_content=(
-                    "Previous incident INC-104 points to a strict validation regression resolved "
-                    "by disabling the strict validation flag."
-                ),
-                metadata_json={"incident_key": "INC-104", "service": "payments-api"},
-            ),
-        ],
-    },
-}
-
-_TOOL_TO_INTEGRATION = {
-    "search_github_changes": "github",
-    "fetch_sentry_issue": "sentry",
-    "query_prometheus_snapshot": "prometheus",
-    "check_statuspage": "statuspage",
-    "search_runbooks": "runbook",
-    "search_previous_incidents": "runbook",
-}
+def _configuration() -> dict[str, tuple[str, bool, list[str]]]:
+    settings = get_settings()
+    return {
+        "github": ("GitHub", bool(settings.github_token and settings.github_repository), ["github_commit"]),
+        "sentry": ("Sentry", bool(settings.sentry_auth_token and settings.sentry_organization and settings.sentry_project), ["sentry_issue"]),
+        "prometheus": ("Prometheus", bool(settings.prometheus_url), ["prometheus_metric"]),
+        "statuspage": ("Statuspage", bool(settings.statuspage_url), ["statuspage"]),
+        "runbook": ("Runbook Search", Path(settings.runbook_directory).is_dir(), ["runbook"]),
+    }
 
 
 def list_integration_health() -> list[IntegrationHealthStatus]:
     return [
         IntegrationHealthStatus(
             key=key,
-            label=value["label"],
-            status=value["status"],
-            detail=value["detail"],
-            source_types=value["source_types"],
+            label=label,
+            status="configured" if configured else "configuration_required",
+            detail="Credentials and endpoint are configured." if configured else "Configure this integration in the server environment.",
+            source_types=source_types,
         )
-        for key, value in _INTEGRATION_FIXTURES.items()
+        for key, (label, configured, source_types) in _configuration().items()
     ]
 
 
+def _github_records(incident: Incident) -> list[IntegrationEvidenceRecord]:
+    settings = get_settings()
+    if not settings.github_token or not settings.github_repository:
+        raise RuntimeError("GITHUB_TOKEN and GITHUB_REPOSITORY are required")
+    response = httpx.get(
+        f"https://api.github.com/repos/{settings.github_repository}/commits",
+        headers={"Authorization": f"Bearer {settings.github_token.get_secret_value()}", "Accept": "application/vnd.github+json"},
+        params={"per_page": 30},
+        timeout=30,
+    )
+    response.raise_for_status()
+    return [IntegrationEvidenceRecord(
+        source_type="github_commit",
+        title=f"Commit {item['sha'][:8]}: {item['commit']['message'].splitlines()[0]}",
+        content=item["commit"]["message"],
+        metadata_json={"sha": item["sha"], "url": item["html_url"], "author_date": item["commit"]["author"]["date"], "service": incident.affected_service},
+    ) for item in response.json()]
+
+
+def _sentry_records(incident: Incident) -> list[IntegrationEvidenceRecord]:
+    settings = get_settings()
+    if not settings.sentry_auth_token or not settings.sentry_organization or not settings.sentry_project:
+        raise RuntimeError("Sentry credentials and project configuration are required")
+    response = httpx.get(
+        f"https://sentry.io/api/0/projects/{settings.sentry_organization}/{settings.sentry_project}/issues/",
+        headers={"Authorization": f"Bearer {settings.sentry_auth_token.get_secret_value()}"},
+        params={"query": f"is:unresolved {incident.affected_service}", "limit": 50},
+        timeout=30,
+    )
+    response.raise_for_status()
+    return [IntegrationEvidenceRecord(
+        source_type="sentry_issue",
+        title=item.get("title", "Sentry issue"),
+        content=f"{item.get('culprit', '')}\n{item.get('metadata', {}).get('value', '')}".strip(),
+        metadata_json={"issue_id": item.get("id"), "short_id": item.get("shortId"), "count": item.get("count"), "first_seen": item.get("firstSeen"), "last_seen": item.get("lastSeen"), "url": item.get("permalink"), "service": incident.affected_service},
+    ) for item in response.json()]
+
+
+def _prometheus_records(incident: Incident) -> list[IntegrationEvidenceRecord]:
+    settings = get_settings()
+    if not settings.prometheus_url:
+        raise RuntimeError("PROMETHEUS_URL is required")
+    query = f'sum(rate(http_requests_total{{service="{incident.affected_service}",status=~"5.."}}[5m]))'
+    response = httpx.get(f"{settings.prometheus_url.rstrip('/')}/api/v1/query", params={"query": query}, timeout=30)
+    response.raise_for_status()
+    result = response.json().get("data", {}).get("result", [])
+    return [IntegrationEvidenceRecord(source_type="prometheus_metric", title=f"5xx rate for {incident.affected_service}", content=str(item.get("value", [])), metadata_json={"query": query, "metric": item.get("metric", {}), "service": incident.affected_service}) for item in result]
+
+
+def _statuspage_records(incident: Incident) -> list[IntegrationEvidenceRecord]:
+    settings = get_settings()
+    if not settings.statuspage_url:
+        raise RuntimeError("STATUSPAGE_URL is required")
+    response = httpx.get(settings.statuspage_url, timeout=30)
+    response.raise_for_status()
+    payload = response.json()
+    return [IntegrationEvidenceRecord(source_type="statuspage", title="External service status", content=str(payload.get("status", payload)), metadata_json={"source_url": settings.statuspage_url, "service": incident.affected_service})]
+
+
+def _runbook_records(incident: Incident) -> list[IntegrationEvidenceRecord]:
+    root = Path(get_settings().runbook_directory).resolve()
+    if not root.is_dir():
+        raise RuntimeError("RUNBOOK_DIRECTORY does not exist")
+    records = []
+    for path in [*root.rglob("*.md"), *root.rglob("*.txt")]:
+        content = path.read_text(encoding="utf-8", errors="replace").strip()
+        if content:
+            records.append(IntegrationEvidenceRecord(source_type="runbook", title=path.stem.replace("-", " ").title(), content=content, metadata_json={"path": str(path.relative_to(root)), "service": incident.affected_service}))
+    return records
+
+
+_LOADERS: dict[str, Callable[[Incident], list[IntegrationEvidenceRecord]]] = {
+    "github": _github_records,
+    "sentry": _sentry_records,
+    "prometheus": _prometheus_records,
+    "statuspage": _statuspage_records,
+    "runbook": _runbook_records,
+}
+
+
 def import_integration_evidence(db: Session, incident_id: int, integration_key: str | None = None) -> dict[str, int]:
-    keys = [integration_key] if integration_key else list(_INTEGRATION_FIXTURES.keys())
-    imported = 0
-    updated = 0
-
+    incident = db.get(Incident, incident_id)
+    if incident is None:
+        raise ValueError("Incident not found")
+    keys = [integration_key] if integration_key else list(_LOADERS)
+    imported = updated = 0
     for key in keys:
-        fixture = _INTEGRATION_FIXTURES.get(key)
-        if fixture is None:
-            continue
-        for record in fixture["records"]:
-            existing = db.scalar(
-                select(EvidenceItem).where(
-                    EvidenceItem.incident_id == incident_id,
-                    EvidenceItem.source_type == record.source_type,
-                    EvidenceItem.title == record.title,
-                )
-            )
+        loader = _LOADERS.get(key)
+        if loader is None:
+            raise ValueError(f"Unknown integration: {key}")
+        for record in loader(incident):
+            existing = db.scalar(select(EvidenceItem).where(EvidenceItem.incident_id == incident_id, EvidenceItem.source_type == record.source_type, EvidenceItem.title == record.title))
             if existing is None:
-                db.add(
-                    EvidenceItem(
-                        incident_id=incident_id,
-                        source_type=record.source_type,
-                        title=record.title,
-                        raw_content=record.raw_content,
-                        normalized_content=record.normalized_content,
-                        metadata_json=record.metadata_json,
-                        embedding_status="pending",
-                        processing_status="uploaded",
-                    )
-                )
+                db.add(EvidenceItem(incident_id=incident_id, source_type=record.source_type, title=record.title, raw_content=record.content, normalized_content=record.content, metadata_json=record.metadata_json, embedding_status="pending", processing_status="uploaded"))
                 imported += 1
-                continue
-
-            existing.raw_content = record.raw_content
-            existing.normalized_content = record.normalized_content
-            existing.metadata_json = record.metadata_json
-            updated += 1
-            db.add(existing)
-
+            else:
+                existing.raw_content = record.content
+                existing.normalized_content = record.content
+                existing.metadata_json = record.metadata_json
+                db.add(existing)
+                updated += 1
     db.commit()
     return {"imported": imported, "updated": updated}
 
 
-def run_tool_adapter(db: Session, incident_id: int, tool_name: str) -> list[dict[str, Any]]:
-    integration_key = _TOOL_TO_INTEGRATION.get(tool_name)
-    if integration_key is None:
-        return []
+_TOOL_SOURCE_TYPES = {
+    "search_github_changes": ["github_pr", "github_commit"],
+    "fetch_sentry_issue": ["sentry_issue"],
+    "query_prometheus_snapshot": ["prometheus_metric"],
+    "check_statuspage": ["statuspage"],
+    "search_runbooks": ["runbook"],
+    "search_previous_incidents": ["previous_incident"],
+}
 
-    fixture = _INTEGRATION_FIXTURES[integration_key]
-    source_types = fixture["source_types"]
-    items = list(
-        db.scalars(
-            select(EvidenceItem).where(
-                EvidenceItem.incident_id == incident_id,
-                EvidenceItem.source_type.in_(source_types),
-            )
-        )
-    )
-    return [
-        {
-            "title": item.title,
-            "source_type": item.source_type,
-            "metadata": item.metadata_json,
-            "snippet": item.normalized_content or item.raw_content,
-        }
-        for item in items
-    ]
+
+def run_tool_adapter(db: Session, incident_id: int, tool_name: str) -> list[dict[str, Any]]:
+    source_types = _TOOL_SOURCE_TYPES.get(tool_name, [])
+    items = list(db.scalars(select(EvidenceItem).where(EvidenceItem.incident_id == incident_id, EvidenceItem.source_type.in_(source_types))))
+    return [{"title": item.title, "source_type": item.source_type, "metadata": item.metadata_json, "snippet": item.normalized_content or item.raw_content} for item in items]

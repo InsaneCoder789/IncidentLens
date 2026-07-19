@@ -12,8 +12,7 @@ import { SeverityBadge } from "@/components/severity-badge";
 import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { getIncident, getIncidentChunks, getIncidentEvidence, getIncidentReport, getIncidentTrace, searchEvidence } from "@/lib/api";
-import { hypotheses, incidentTimeline } from "@/lib/mock-data";
+import { getApprovals, getIncident, getIncidentChunks, getIncidentEvents, getIncidentEvidence, getIncidentReport, getIncidentTrace, searchEvidence } from "@/lib/api";
 
 export default async function IncidentDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -21,20 +20,26 @@ export default async function IncidentDetailPage({ params }: { params: Promise<{
   const incident = await getIncident(incidentId);
   if (!incident) notFound();
 
-  const [evidence, chunks, retrieval, report, trace] = await Promise.all([
+  const [evidence, chunks, retrieval, report, trace, events, approvals] = await Promise.all([
     getIncidentEvidence(incident.id),
     getIncidentChunks(incident.id),
     searchEvidence({ incident_id: incident.id, query: "What caused the payment API failure?", top_k: 8, score_threshold: 0.2 }),
     getIncidentReport(incident.id),
     getIncidentTrace(incident.id),
+    getIncidentEvents(incident.id),
+    getApprovals(incident.id),
   ]);
 
-  const activeHypotheses = report
-    ? [
-        ...hypotheses.filter((item) => item.title === report.selected_root_cause),
-        ...hypotheses.filter((item) => item.title !== report.selected_root_cause),
-      ]
-    : hypotheses;
+  const activeHypotheses = (report?.analysis_json.hypotheses ?? [])
+    .map((item, index) => ({
+      id: `hypothesis-${index}`,
+      title: item.title,
+      confidence: item.confidence,
+      summary: item.reasoning_summary,
+      supportingEvidence: item.supporting_evidence,
+      contradictingEvidence: item.contradicting_evidence,
+    }))
+    .sort((left, right) => Number(right.title === report?.selected_root_cause) - Number(left.title === report?.selected_root_cause));
   const evidenceById = new Map(evidence.map((item) => [item.id, item]));
   const citationsByEvidenceId = new Map<number, string[]>();
   const citationSourceTypes: Record<string, string> = {};
@@ -86,7 +91,7 @@ export default async function IncidentDetailPage({ params }: { params: Promise<{
           </CardContent>
         </Card>
 
-        <IncidentTimeline events={incidentTimeline} />
+        <IncidentTimeline events={events.map((event) => ({ time: new Date(event.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }), title: event.title, description: event.description, tone: event.event_type.includes("approval") ? "warning" as const : event.event_type.includes("investigation") ? "accent" as const : "neutral" as const }))} />
       </div>
 
       <div className="min-w-0 space-y-4">
@@ -163,9 +168,9 @@ export default async function IncidentDetailPage({ params }: { params: Promise<{
 
             <div className="space-y-3">
               <div className="label-caps text-muted">Root cause hypotheses</div>
-              {activeHypotheses.map((hypothesis) => (
+              {activeHypotheses.length ? activeHypotheses.map((hypothesis) => (
                 <RootCauseHypothesisCard key={hypothesis.id} {...hypothesis} />
-              ))}
+              )) : <div className="rounded-xl border border-dashed border-line/15 p-4 text-xs text-muted">Run the investigation to generate evidence-grounded hypotheses.</div>}
             </div>
           </CardContent>
         </Card>
@@ -178,6 +183,7 @@ export default async function IncidentDetailPage({ params }: { params: Promise<{
           initialReport={report}
           initialTrace={trace}
           citationSourceTypes={citationSourceTypes}
+          initialApprovals={approvals}
         />
         <Card>
           <CardHeader><SectionHeading eyebrow="Grounding" title="Key evidence" /></CardHeader>

@@ -59,7 +59,7 @@ export function NavigationContent({ onNavigate }: { onNavigate?: () => void }) {
             </span>
             <span className="text-xs font-medium text-text">Production connected</span>
           </div>
-          <div className="mt-2 font-mono text-[9px] uppercase tracking-[0.12em] text-muted">payments-oncall / mock-safe</div>
+          <div className="mt-2 font-mono text-[9px] uppercase tracking-[0.12em] text-muted">operations / authenticated</div>
         </div>
         <Link href="/incidents/1" onClick={onNavigate} className="block">
           <Button className="group w-full justify-between rounded-xl">

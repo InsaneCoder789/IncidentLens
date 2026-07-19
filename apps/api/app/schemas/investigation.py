@@ -20,6 +20,7 @@ class IncidentReportRead(BaseModel):
     selected_root_cause: str
     confidence_score: float
     evaluation_score: float
+    analysis_json: dict = Field(default_factory=dict)
     created_at: datetime
 
 

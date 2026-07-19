@@ -3,8 +3,8 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { AlertTriangle, ChevronDown, Clock3, Database, LockKeyhole, PlayCircle } from "lucide-react";
-import { getIncidentReport, getIncidentTrace, runInvestigation, traceSummary } from "@/lib/api";
-import type { AgentRun, IncidentReport, IncidentTrace, ToolCall } from "@/lib/types";
+import { decideApproval, getIncidentReport, getIncidentTrace, requestApproval, runInvestigation, traceSummary } from "@/lib/api";
+import type { AgentRun, ApprovalRequest, IncidentReport, IncidentTrace, ToolCall } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -157,8 +157,10 @@ export function IncidentReportViewer({
 }
 
 
-export function ApprovalGatedActionsPanel({ report }: { report?: IncidentReport }) {
-  const [requested, setRequested] = useState<Set<string>>(new Set());
+export function ApprovalGatedActionsPanel({ incidentId, report, initialApprovals }: { incidentId: number; report?: IncidentReport; initialApprovals: ApprovalRequest[] }) {
+  const [approvals, setApprovals] = useState(initialApprovals);
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const actions = useMemo(() => {
     if (!report) return [];
     return report.report_markdown
@@ -174,12 +176,14 @@ export function ApprovalGatedActionsPanel({ report }: { report?: IncidentReport 
     <Card>
       <CardHeader><div><div className="label-caps text-warning">Human control</div><div className="mt-1 text-sm font-medium text-text">Approval-gated actions</div></div></CardHeader>
       <CardContent className="space-y-3">
-        {actions.length === 0 ? <div className="text-xs text-slate-500">No approval-gated actions yet.</div> : actions.map((item) => (
-          <div key={item} className="rounded-xl border border-danger/20 bg-danger/[0.045] p-3">
+        {error ? <div className="rounded-lg border border-danger/25 bg-danger/[0.06] p-2 text-xs text-danger">{error}</div> : null}
+        {actions.length === 0 ? <div className="text-xs text-slate-500">No approval-gated actions yet.</div> : actions.map((item) => {
+          const approval = approvals.find((candidate) => candidate.action === item);
+          return <div key={item} className="rounded-xl border border-danger/20 bg-danger/[0.045] p-3">
             <div className="flex gap-2 text-xs leading-5 text-text"><LockKeyhole className="mt-0.5 h-3.5 w-3.5 shrink-0 text-danger" strokeWidth={1.5} /><span>{item}</span></div>
-            <Button type="button" variant="outline" size="sm" disabled={requested.has(item)} className="mt-3 w-full" onClick={() => setRequested((current) => new Set(current).add(item))}>{requested.has(item) ? "Approval requested" : "Request approval"}</Button>
-          </div>
-        ))}
+            {approval ? <div className="mt-3 space-y-2"><div className="font-mono text-[10px] uppercase tracking-[0.08em] text-warning">{approval.status}</div>{approval.status === "pending" ? <div className="grid grid-cols-2 gap-2"><Button size="sm" onClick={async () => { setPendingAction(item); setError(null); try { const next = await decideApproval(approval.id, "approved", approval.version); setApprovals((current) => current.map((entry) => entry.id === next.id ? next : entry)); } catch (cause) { setError(cause instanceof Error ? cause.message : "Approval failed"); } finally { setPendingAction(null); } }}>Approve</Button><Button variant="outline" size="sm" onClick={async () => { setPendingAction(item); setError(null); try { const next = await decideApproval(approval.id, "rejected", approval.version); setApprovals((current) => current.map((entry) => entry.id === next.id ? next : entry)); } catch (cause) { setError(cause instanceof Error ? cause.message : "Rejection failed"); } finally { setPendingAction(null); } }}>Reject</Button></div> : null}</div> : <Button type="button" variant="outline" size="sm" disabled={pendingAction === item} className="mt-3 w-full" onClick={async () => { setPendingAction(item); setError(null); try { const next = await requestApproval(incidentId, item, "Requested from the evidence-grounded remediation plan"); setApprovals((current) => [next, ...current]); } catch (cause) { setError(cause instanceof Error ? cause.message : "Approval request failed"); } finally { setPendingAction(null); } }}>{pendingAction === item ? "Requesting..." : "Request approval"}</Button>}
+          </div>;
+        })}
       </CardContent>
     </Card>
   );
@@ -329,11 +333,13 @@ export function InvestigationWorkspace({
   initialReport,
   initialTrace,
   citationSourceTypes = {},
+  initialApprovals,
 }: {
   incidentId: number;
   initialReport?: IncidentReport;
   initialTrace: IncidentTrace;
   citationSourceTypes?: Record<string, string>;
+  initialApprovals: ApprovalRequest[];
 }) {
   const [report, setReport] = useState<IncidentReport | undefined>(initialReport);
   const [trace, setTrace] = useState<IncidentTrace>(initialTrace);
@@ -362,7 +368,7 @@ export function InvestigationWorkspace({
       {error ? <InvestigationErrorState title="Investigation Error" description={error} /> : null}
       <InvestigationStatusPanel report={report} trace={trace} />
       <IncidentReportViewer report={report} citationSourceTypes={citationSourceTypes} />
-      <ApprovalGatedActionsPanel report={report} />
+      <ApprovalGatedActionsPanel incidentId={incidentId} report={report} initialApprovals={initialApprovals} />
       <MissingEvidencePanel report={report} />
     </div>
   );

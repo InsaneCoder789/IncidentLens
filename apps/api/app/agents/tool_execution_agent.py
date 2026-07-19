@@ -40,4 +40,4 @@ class ToolExecutionAgent(BaseAgent):
         return state
 
     def output_summary(self, state: InvestigationState) -> str:
-        return f"Executed {len(state.tool_outputs)} safe mock tools and persisted their outputs."
+        return f"Executed {len(state.tool_outputs)} configured read-only tools and persisted their outputs."

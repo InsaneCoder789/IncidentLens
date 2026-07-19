@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, JSON, String, Text
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, JSON, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.types import Base
@@ -22,6 +22,7 @@ class IncidentReport(Base):
     selected_root_cause: Mapped[str] = mapped_column(String(255), nullable=False)
     confidence_score: Mapped[float] = mapped_column(Float, nullable=False)
     evaluation_score: Mapped[float] = mapped_column(Float, nullable=False)
+    analysis_json: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False)
 
     incident = relationship("Incident", back_populates="reports")
@@ -36,7 +37,7 @@ class AgentRun(Base):
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="pending")
     input_summary: Mapped[str] = mapped_column(Text, nullable=False, default="")
     output_summary: Mapped[str] = mapped_column(Text, nullable=False, default="")
-    model_name: Mapped[str] = mapped_column(String(255), nullable=False, default="mock-llm")
+    model_name: Mapped[str] = mapped_column(String(255), nullable=False, default="unassigned")
     prompt_version: Mapped[str] = mapped_column(String(255), nullable=False, default="unknown")
     latency_ms: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     token_input: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
@@ -84,6 +85,7 @@ class ModelRun(Base):
 
 class PromptVersion(Base):
     __tablename__ = "prompt_versions"
+    __table_args__ = (UniqueConstraint("name", "version", name="uq_prompt_versions_name_version"),)
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
     name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
@@ -91,7 +93,6 @@ class PromptVersion(Base):
     description: Mapped[str] = mapped_column(Text, nullable=False, default="")
     template: Mapped[str] = mapped_column(Text, nullable=False, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False)
-
 
 class EvalRun(Base):
     __tablename__ = "eval_runs"

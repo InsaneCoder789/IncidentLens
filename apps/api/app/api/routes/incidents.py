@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.agents.orchestrator import get_incident_trace, get_latest_report, run_investigation
 from app.db.session import get_db
 from app.core.config import get_settings
+from app.core.security import ServicePrincipal, require_api_token
 from app.schemas.evidence import (
     EVIDENCE_SOURCE_TYPES,
     EvidenceChunkRead,
@@ -32,6 +33,7 @@ from app.services.incident_service import (
     list_incidents,
     update_incident,
 )
+from app.services.operations_service import record_audit_event, record_incident_event
 
 router = APIRouter(prefix="/api/incidents", tags=["incidents"])
 settings = get_settings()
@@ -53,8 +55,29 @@ def read_incidents(db: Session = Depends(get_db)) -> list[IncidentRead]:
 
 
 @router.post("", response_model=IncidentRead, status_code=status.HTTP_201_CREATED)
-def create_incident_route(payload: IncidentCreate, db: Session = Depends(get_db)) -> IncidentRead:
+def create_incident_route(
+    payload: IncidentCreate,
+    db: Session = Depends(get_db),
+    principal: ServicePrincipal = Depends(require_api_token),
+) -> IncidentRead:
     incident = create_incident(db, payload)
+    record_incident_event(
+        db,
+        incident_id=incident.id,
+        event_type="incident_created",
+        title="Incident created",
+        description=incident.description,
+        actor=principal.subject,
+    )
+    record_audit_event(
+        db,
+        actor=principal.subject,
+        action="incident.created",
+        resource_type="incident",
+        resource_id=str(incident.id),
+        incident_id=incident.id,
+    )
+    db.commit()
     return IncidentRead.model_validate({**incident.__dict__, "evidence_count": 0})
 
 
@@ -67,19 +90,57 @@ def read_incident(incident_id: int, db: Session = Depends(get_db)) -> IncidentRe
 
 
 @router.patch("/{incident_id}", response_model=IncidentRead)
-def patch_incident(incident_id: int, payload: IncidentUpdate, db: Session = Depends(get_db)) -> IncidentRead:
+def patch_incident(
+    incident_id: int,
+    payload: IncidentUpdate,
+    db: Session = Depends(get_db),
+    principal: ServicePrincipal = Depends(require_api_token),
+) -> IncidentRead:
     incident = get_incident(db, incident_id)
     if not incident:
         raise HTTPException(status_code=404, detail="Incident not found")
     updated = update_incident(db, incident, payload)
+    changes = payload.model_dump(exclude_unset=True)
+    record_incident_event(
+        db,
+        incident_id=incident_id,
+        event_type="incident_updated",
+        title="Incident updated",
+        description=", ".join(sorted(changes)) or "Incident metadata updated",
+        actor=principal.subject,
+        metadata={"changes": changes},
+    )
+    record_audit_event(
+        db,
+        actor=principal.subject,
+        action="incident.updated",
+        resource_type="incident",
+        resource_id=str(incident_id),
+        incident_id=incident_id,
+        details={"changes": changes},
+    )
+    db.commit()
     return IncidentRead.model_validate({**updated.__dict__, "evidence_count": evidence_count_for_incident(db, updated.id)})
 
 
 @router.delete("/{incident_id}", status_code=status.HTTP_204_NO_CONTENT)
-def remove_incident(incident_id: int, db: Session = Depends(get_db)) -> None:
+def remove_incident(
+    incident_id: int,
+    db: Session = Depends(get_db),
+    principal: ServicePrincipal = Depends(require_api_token),
+) -> None:
     incident = get_incident(db, incident_id)
     if not incident:
         raise HTTPException(status_code=404, detail="Incident not found")
+    record_audit_event(
+        db,
+        actor=principal.subject,
+        action="incident.deleted",
+        resource_type="incident",
+        resource_id=str(incident_id),
+        details={"title": incident.title},
+    )
+    db.commit()
     delete_incident(db, incident)
 
 
@@ -124,6 +185,7 @@ async def upload_incident_evidence(
     source_type: str | None = Form(default=None),
     process_immediately: bool = Form(default=True),
     db: Session = Depends(get_db),
+    principal: ServicePrincipal = Depends(require_api_token),
 ) -> EvidenceUploadResponse:
     incident = get_incident(db, incident_id)
     if not incident:
@@ -205,6 +267,24 @@ async def upload_incident_evidence(
         upload_status = "processed"
 
     db.refresh(evidence)
+    record_incident_event(
+        db,
+        incident_id=incident_id,
+        event_type="evidence_uploaded",
+        title="Evidence uploaded",
+        description=evidence.title,
+        actor=principal.subject,
+        metadata={"evidence_id": evidence.id, "source_type": evidence.source_type},
+    )
+    record_audit_event(
+        db,
+        actor=principal.subject,
+        action="evidence.uploaded",
+        resource_type="evidence",
+        resource_id=str(evidence.id),
+        incident_id=incident_id,
+    )
+    db.commit()
     return EvidenceUploadResponse(
         evidence=EvidenceItemRead.model_validate(evidence),
         processing=processing,
@@ -235,11 +315,33 @@ def read_incident_chunks(incident_id: int, db: Session = Depends(get_db)) -> lis
 
 
 @router.post("/{incident_id}/investigate", response_model=InvestigationStartResponse)
-def investigate_incident(incident_id: int, db: Session = Depends(get_db)) -> InvestigationStartResponse:
+def investigate_incident(
+    incident_id: int,
+    db: Session = Depends(get_db),
+    principal: ServicePrincipal = Depends(require_api_token),
+) -> InvestigationStartResponse:
     incident = get_incident(db, incident_id)
     if not incident:
         raise HTTPException(status_code=404, detail="Incident not found")
     report = asyncio.run(run_investigation(db, incident_id))
+    record_incident_event(
+        db,
+        incident_id=incident_id,
+        event_type="investigation_completed",
+        title="Investigation completed",
+        description=report.selected_root_cause,
+        actor=principal.subject,
+        metadata={"report_id": report.id, "confidence": report.confidence_score},
+    )
+    record_audit_event(
+        db,
+        actor=principal.subject,
+        action="investigation.completed",
+        resource_type="incident_report",
+        resource_id=report.id,
+        incident_id=incident_id,
+    )
+    db.commit()
     return InvestigationStartResponse(
         incident_id=str(incident_id),
         status="completed",
@@ -265,6 +367,7 @@ def read_incident_report(incident_id: int, db: Session = Depends(get_db)) -> Inc
         selected_root_cause=report.selected_root_cause,
         confidence_score=report.confidence_score,
         evaluation_score=report.evaluation_score,
+        analysis_json=report.analysis_json,
         created_at=report.created_at,
     )
 

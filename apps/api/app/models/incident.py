@@ -52,3 +52,5 @@ class Incident(Base):
     evidence_items = relationship("EvidenceItem", back_populates="incident", cascade="all, delete-orphan")
     reports = relationship("IncidentReport", back_populates="incident", cascade="all, delete-orphan")
     agent_runs = relationship("AgentRun", back_populates="incident", cascade="all, delete-orphan")
+    events = relationship("IncidentEvent", back_populates="incident", cascade="all, delete-orphan")
+    approval_requests = relationship("ApprovalRequest", back_populates="incident", cascade="all, delete-orphan")

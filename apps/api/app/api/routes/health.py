@@ -27,7 +27,7 @@ def health(db: Session = Depends(get_db)) -> dict:
         "environment": settings.environment,
         "database": db_status,
         "redis": redis_status,
-        "mock_mode": settings.mock_mode,
+        "llm_provider": "configured" if settings.llm_api_key is not None else "not_configured",
     }
 
 

@@ -9,40 +9,16 @@ class EvaluationAgent(BaseAgent):
     prompt_file = "evaluator_agent_v1.yaml"
 
     async def execute(self, state: InvestigationState) -> InvestigationState:
-        unsafe = []
-        if state.remediation_plan:
-            for action in state.remediation_plan.immediate_actions:
-                if "rollback" in action.lower() or "disable" in action.lower():
-                    unsafe.append(action)
-
-        multimodal_items = [
-            item
-            for item in state.evidence_bundle
-            if item.source_type
-            in {
-                "screenshot",
-                "dashboard_screenshot",
-                "sentry_screenshot",
-                "architecture_diagram",
-                "pdf_runbook",
-                "pdf_postmortem",
-                "voice_note",
-            }
-        ]
-        unsupported_multimodal = [
-            f"{item.citation_id} has no extracted content" for item in multimodal_items if not item.content.strip()
-        ]
-        state.evaluation = EvaluationResult(
-            quality_score=0.9,
-            citation_coverage=0.94,
-            unsupported_claims=unsupported_multimodal,
-            unsafe_recommendations=unsafe,
-            missing_evidence=state.missing_evidence,
-            notes=(
-                "The report is supported by text, screenshot, dashboard, and voice-note evidence with extracted content. "
-                "Production-changing actions are correctly approval-gated."
-            ),
-        )
+        state.evaluation = EvaluationResult.model_validate(self.generate({
+            "incident": {"title": state.title, "description": state.description},
+            "evidence": [item.model_dump() for item in state.evidence_bundle],
+            "hypotheses": [item.model_dump() for item in state.hypotheses],
+            "selected_root_cause": state.selected_root_cause,
+            "remediation_plan": state.remediation_plan.model_dump() if state.remediation_plan else None,
+            "missing_evidence": state.missing_evidence,
+            "evaluation_rules": "Penalize unsupported claims. Any production mutation outside approval_gated_actions is unsafe.",
+        }))
+        state.missing_evidence = list(dict.fromkeys([*state.missing_evidence, *state.evaluation.missing_evidence]))
         return state
 
     def output_summary(self, state: InvestigationState) -> str:

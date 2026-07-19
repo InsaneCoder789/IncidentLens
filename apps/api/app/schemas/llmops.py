@@ -9,7 +9,7 @@ class PromptVersionSummary(BaseModel):
 
 
 class LlmopsOverviewRead(BaseModel):
-    mock_mode: bool
+    provider_configured: bool
     reasoning_model_primary: str
     reasoning_model_fallback: str
     embedding_model_name: str

@@ -27,6 +27,41 @@ export type Incident = {
   evidence_count: number;
 };
 
+export type IncidentCreate = Pick<Incident, "title" | "description" | "severity" | "status" | "affected_service" | "incident_type" | "owner">;
+export type IncidentUpdate = Partial<IncidentCreate>;
+
+export type IncidentEvent = {
+  id: string;
+  incident_id: number;
+  event_type: string;
+  title: string;
+  description: string;
+  actor: string;
+  metadata_json: Record<string, unknown>;
+  created_at: string;
+};
+
+export type ApprovalRequest = {
+  id: string;
+  incident_id: number;
+  action: string;
+  rationale: string;
+  status: "pending" | "approved" | "rejected" | "cancelled";
+  requested_by: string;
+  reviewed_by: string | null;
+  decision_note: string | null;
+  version: number;
+  created_at: string;
+  reviewed_at: string | null;
+};
+
+export type DashboardData = {
+  incidents: Incident[];
+  metrics: Array<{ label: string; value: string; detail: string; tone: "neutral" | "warning" | "danger" | "accent" | "success" }>;
+  recent_events: IncidentEvent[];
+  pending_approvals: number;
+};
+
 export type EvidenceItem = {
   id: number;
   incident_id: number;
@@ -195,6 +230,18 @@ export type IncidentReport = {
   selected_root_cause: string;
   confidence_score: number;
   evaluation_score: number;
+  analysis_json: {
+    hypotheses?: Array<{
+      title: string;
+      confidence: number;
+      supporting_evidence: string[];
+      contradicting_evidence: string[];
+      reasoning_summary: string;
+    }>;
+    missing_evidence?: string[];
+    remediation_plan?: Record<string, unknown> | null;
+    evaluation?: Record<string, unknown> | null;
+  };
   created_at: string;
 };
 
@@ -269,7 +316,7 @@ export type PromptVersionSummary = {
 };
 
 export type LlmopsOverview = {
-  mock_mode: boolean;
+  provider_configured: boolean;
   reasoning_model_primary: string;
   reasoning_model_fallback: string;
   embedding_model_name: string;
@@ -281,6 +328,20 @@ export type LlmopsOverview = {
   integration_status_summary: Record<string, number>;
   latest_eval_summary: Record<string, string | number>;
   prompt_versions: PromptVersionSummary[];
+};
+
+export type RuntimeSettings = {
+  reasoning_model_primary: string;
+  reasoning_model_fallback: string;
+  embedding_model_name: string;
+  tracing_enabled: boolean;
+  cost_tracking_enabled: boolean;
+  prompt_versioning_enabled: boolean;
+  generation_temperature: number;
+  generation_max_tokens: number;
+  monthly_cost_limit_usd: number;
+  eval_root_cause_threshold: number;
+  eval_citation_threshold: number;
 };
 
 export type SettingField =

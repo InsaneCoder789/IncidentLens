@@ -7,6 +7,8 @@ import { MultimodalEvidenceCard, MultimodalUploadPanel } from "@/components/mult
 import { Database, FileSearch } from "lucide-react";
 import { getIncidentChunks, getIncidentEvidence, getIntegrationHealth, searchEvidence } from "@/lib/api";
 
+export const dynamic = "force-dynamic";
+
 export default async function EvidencePage() {
   const [evidence, chunks, retrieval, integrations] = await Promise.all([
     getIncidentEvidence(1),

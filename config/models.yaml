@@ -1,7 +1,7 @@
 models:
   reasoning:
-    primary: mock-llm
-    fallback: mock-llm
+    primary: gpt-4.1-mini
+    fallback: gpt-4.1-nano
   embeddings:
     primary: sentence-transformers/all-MiniLM-L6-v2
   reranker:
@@ -17,4 +17,3 @@ llmops:
   tracing_enabled: true
   cost_tracking_enabled: true
   prompt_versioning_enabled: true
-
