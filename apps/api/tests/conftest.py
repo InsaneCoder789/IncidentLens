@@ -72,7 +72,11 @@ def fake_model_transport(monkeypatch):
 
     monkeypatch.setattr(ModelRouter, "run_structured", run_structured)
     monkeypatch.setattr(EmbeddingProvider, "__init__", embedding_init)
-    monkeypatch.setattr(EmbeddingProvider, "embed_batch", lambda self, texts: [[0.0] * self.dimension for _ in texts])
+    monkeypatch.setattr(
+        EmbeddingProvider,
+        "embed_batch",
+        lambda self, texts: [[1.0, *([0.0] * (self.dimension - 1))] for _ in texts],
+    )
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
