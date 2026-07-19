@@ -46,7 +46,7 @@ export function EvalsClient({ initialRuns }: { initialRuns: EvalRun[] }) {
   return (
     <div>
       <PageIntro
-        eyebrow="Quality control / phase 7"
+        eyebrow="Quality control"
         title="Evaluation dashboard"
         description="Measure retrieval quality, root-cause accuracy, citation grounding, safety, latency, and cost against the versioned incident dataset."
         actions={<><Button onClick={triggerRun} disabled={isPending}><Play className="mr-2 h-4 w-4" strokeWidth={1.5} />{isPending ? "Running suite..." : "Run eval suite"}</Button><span className="inline-flex min-h-11 items-center rounded-[10px] border border-line/12 bg-panel px-3 text-xs text-muted">{latest ? `Last run ${new Date(latest.created_at).toLocaleDateString()}` : "No runs yet"}</span></>}
@@ -65,7 +65,7 @@ export function EvalsClient({ initialRuns }: { initialRuns: EvalRun[] }) {
                 <div className="flex items-center justify-between border-b border-line/8 py-3 text-xs"><span className="flex items-center gap-2 text-muted"><ShieldAlert className="h-3.5 w-3.5 text-warning" strokeWidth={1.5} />Unsupported claims</span><span className="font-mono text-text">{toPercent(latest.unsupported_claim_rate)}</span></div>
                 <div className="flex items-center justify-between py-3 text-xs"><span className="flex items-center gap-2 text-muted"><Clock3 className="h-3.5 w-3.5 text-accent" strokeWidth={1.5} />Average latency</span><span className="font-mono text-text">{Math.round(latest.avg_latency_ms)}ms</span></div>
                 <div className="mt-3 rounded-xl border border-line/10 bg-bg/40 p-3 text-xs leading-5 text-muted">Dataset <span className="font-mono text-text">{latest.dataset_name}</span> completed at an estimated <span className="font-mono text-text">${latest.avg_cost_usd.toFixed(2)}</span> per run.</div>
-              </> : <div className="py-10 text-center text-sm text-muted">Run the local evaluation suite to establish the first baseline.</div>}
+              </> : <div className="py-10 text-center text-sm text-muted">Run the evaluation suite to establish the first baseline.</div>}
             </CardContent>
           </Card>
         </div>

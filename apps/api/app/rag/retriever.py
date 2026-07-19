@@ -110,13 +110,16 @@ def _python_semantic_search(
 
 
 def search_evidence(db: Session, request: RetrievalSearchRequest) -> list[RetrievalResultRead]:
+    rows = list(db.execute(_base_query(request)).all())
+    if not rows:
+        return []
+
     provider = get_embedding_provider()
 
     postgres_results = _postgres_semantic_search(db, provider, request)
     if len(postgres_results) >= request.top_k:
         return postgres_results[: request.top_k]
 
-    rows = list(db.execute(_base_query(request)).all())
     semantic_results = postgres_results or _python_semantic_search(rows, provider, request)
     if len(semantic_results) >= request.top_k:
         return semantic_results[: request.top_k]

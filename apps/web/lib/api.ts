@@ -16,6 +16,7 @@ import type {
   IntegrationHealth,
   IntegrationImportResponse,
   InvestigationRunResponse,
+  Job,
   LlmopsOverview,
   ProcessAllEvidenceResponse,
   RetrievalSearchRequest,
@@ -200,7 +201,17 @@ export function evidenceFileUrl(evidenceId: number): string {
 }
 
 export async function processAllEvidence(incidentId: number): Promise<ProcessAllEvidenceResponse> {
-  return requestJson<ProcessAllEvidenceResponse>(`/api/incidents/${incidentId}/evidence/process-all`, { method: "POST" });
+  const job = await requestJson<Job>(`/api/incidents/${incidentId}/evidence-jobs`, {
+    method: "POST",
+    headers: { "Idempotency-Key": `evidence:${incidentId}:${crypto.randomUUID()}` },
+  });
+  const completed = await waitForJob(job.id);
+  return {
+    incident_id: incidentId,
+    processed: Number(completed.result_json.processed),
+    failed: Number(completed.result_json.failed),
+    chunks_created: Number(completed.result_json.chunks_created),
+  };
 }
 
 export async function searchEvidence(payload: RetrievalSearchRequest): Promise<RetrievalSearchResponse> {
@@ -211,7 +222,40 @@ export async function searchEvidence(payload: RetrievalSearchRequest): Promise<R
 }
 
 export async function runInvestigation(incidentId: number): Promise<InvestigationRunResponse> {
-  return requestJson<InvestigationRunResponse>(`/api/incidents/${incidentId}/investigate`, { method: "POST" }, 60_000);
+  const job = await requestJson<Job>(`/api/incidents/${incidentId}/investigation-jobs`, {
+    method: "POST",
+    headers: { "Idempotency-Key": `investigation:${incidentId}:${crypto.randomUUID()}` },
+  });
+  const completed = await waitForJob(job.id);
+  return {
+    incident_id: String(incidentId),
+    status: completed.status,
+    report_id: String(completed.result_json.report_id),
+    selected_root_cause: String(completed.result_json.selected_root_cause),
+    confidence_score: Number(completed.result_json.confidence_score),
+    quality_score: Number(completed.result_json.quality_score),
+  };
+}
+
+export async function getJob(jobId: string): Promise<Job> {
+  return requestJson<Job>(`/api/jobs/${jobId}`);
+}
+
+export async function cancelJob(jobId: string): Promise<Job> {
+  return requestJson<Job>(`/api/jobs/${jobId}/cancel`, { method: "POST" });
+}
+
+async function waitForJob(jobId: string, timeoutMs = 300_000): Promise<Job> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const job = await getJob(jobId);
+    if (job.status === "completed") return job;
+    if (job.status === "failed" || job.status === "cancelled") {
+      throw new ApiError(job.error_message ?? `Job ${job.status}`, 409);
+    }
+    await new Promise((resolve) => setTimeout(resolve, 1_000));
+  }
+  throw new ApiError("Job did not complete before the client timeout; it remains visible in the job ledger", 504);
 }
 
 export async function getIncidentReport(incidentId: number): Promise<IncidentReport | undefined> {
@@ -242,7 +286,15 @@ export async function getEvalRuns(): Promise<EvalRun[]> {
 }
 
 export async function runEvalSuite(): Promise<EvalRunTriggerResponse> {
-  return requestJson<EvalRunTriggerResponse>("/api/evals/run", { method: "POST" }, 60_000);
+  const job = await requestJson<Job>("/api/evaluation-jobs", {
+    method: "POST",
+    headers: { "Idempotency-Key": `evaluation:${crypto.randomUUID()}` },
+  });
+  const completed = await waitForJob(job.id);
+  const runId = String(completed.result_json.eval_run_id);
+  const run = (await getEvalRuns()).find((candidate) => candidate.id === runId);
+  if (!run) throw new ApiError("The completed evaluation run could not be loaded", 500);
+  return { status: "completed", run };
 }
 
 export async function getLlmopsOverview(): Promise<LlmopsOverview> {

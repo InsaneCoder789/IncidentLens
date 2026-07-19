@@ -1,4 +1,4 @@
-.PHONY: setup dev dev-web dev-api migrate test test-api test-web docker-up docker-down
+.PHONY: setup dev dev-web dev-api migrate test test-api test-web test-e2e docker-up docker-down
 
 PYTHON=.venv/bin/python
 UVICORN=.venv/bin/uvicorn
@@ -24,7 +24,10 @@ test-api:
 	cd apps/api && ../../$(PYTHON) -m pytest -q
 
 test-web:
-	cd apps/web && ./node_modules/.bin/tsc --noEmit && ./node_modules/.bin/next build
+	cd apps/web && ./node_modules/.bin/vitest run && ./node_modules/.bin/tsc --noEmit && ./node_modules/.bin/next build
+
+test-e2e:
+	cd apps/web && ./node_modules/.bin/playwright test
 
 test: test-api test-web
 

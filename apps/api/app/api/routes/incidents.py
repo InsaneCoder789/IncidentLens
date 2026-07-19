@@ -78,6 +78,7 @@ def create_incident_route(
         incident_id=incident.id,
     )
     db.commit()
+    db.refresh(incident)
     return IncidentRead.model_validate({**incident.__dict__, "evidence_count": 0})
 
 
@@ -120,6 +121,7 @@ def patch_incident(
         details={"changes": changes},
     )
     db.commit()
+    db.refresh(updated)
     return IncidentRead.model_validate({**updated.__dict__, "evidence_count": evidence_count_for_incident(db, updated.id)})
 
 

@@ -5,6 +5,7 @@ import { ConfidenceGauge } from "@/components/confidence-gauge";
 import { ChunkList, EvidenceCitation, RetrievalStatusStrip, RootCauseHypothesisCard, SemanticSearchPanel } from "@/components/evidence-citation";
 import { EvidenceCard } from "@/components/evidence-card";
 import { IncidentTimeline } from "@/components/incident-timeline";
+import { IncidentMetadataControls } from "@/components/incident-controls";
 import { PageIntro, SectionHeading } from "@/components/page-intro";
 import { InvestigationWorkspace } from "@/components/investigation-ui";
 import { MultimodalEvidenceCard, MultimodalUploadPanel } from "@/components/multimodal-evidence";
@@ -23,7 +24,7 @@ export default async function IncidentDetailPage({ params }: { params: Promise<{
   const [evidence, chunks, retrieval, report, trace, events, approvals] = await Promise.all([
     getIncidentEvidence(incident.id),
     getIncidentChunks(incident.id),
-    searchEvidence({ incident_id: incident.id, query: "What caused the payment API failure?", top_k: 8, score_threshold: 0.2 }),
+    searchEvidence({ incident_id: incident.id, query: `${incident.title}. ${incident.description}`, top_k: 8, score_threshold: 0.2 }),
     getIncidentReport(incident.id),
     getIncidentTrace(incident.id),
     getIncidentEvents(incident.id),
@@ -90,6 +91,8 @@ export default async function IncidentDetailPage({ params }: { params: Promise<{
             <div className="flex items-center justify-between py-2.5"><span className="text-muted">Evidence</span><span>{evidence.length} items</span></div>
           </CardContent>
         </Card>
+
+        <IncidentMetadataControls incident={incident} />
 
         <IncidentTimeline events={events.map((event) => ({ time: new Date(event.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }), title: event.title, description: event.description, tone: event.event_type.includes("approval") ? "warning" as const : event.event_type.includes("investigation") ? "accent" as const : "neutral" as const }))} />
       </div>
@@ -177,7 +180,7 @@ export default async function IncidentDetailPage({ params }: { params: Promise<{
       </div>
 
       <div className="min-w-0 space-y-4 xl:col-span-2 2xl:col-span-1">
-        <ConfidenceGauge value={report?.confidence_score ?? incident.latest_confidence_score ?? 0.86} />
+        <ConfidenceGauge value={report?.confidence_score ?? incident.latest_confidence_score ?? 0} />
         <InvestigationWorkspace
           incidentId={incident.id}
           initialReport={report}

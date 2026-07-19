@@ -9,7 +9,7 @@ async function proxy(request: NextRequest, context: { params: Promise<{ path: st
   }
 
   const { path } = await context.params;
-  const target = new URL(`/api/${path.join("/")}`, API_URL);
+  const target = new URL(`/${path.join("/")}`, API_URL);
   target.search = request.nextUrl.search;
   const headers = new Headers();
   const contentType = request.headers.get("content-type");

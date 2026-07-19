@@ -11,6 +11,7 @@ from app.models import evidence as _evidence_models  # noqa: F401,E402
 from app.models import incident as _incident_models  # noqa: F401,E402
 from app.models import investigation as _investigation_models  # noqa: F401,E402
 from app.models import operations as _operations_models  # noqa: F401,E402
+from app.models import jobs as _job_models  # noqa: F401,E402
 from app.models.incident import Incident
 from app.models.types import Base
 from app.db.session import SessionLocal

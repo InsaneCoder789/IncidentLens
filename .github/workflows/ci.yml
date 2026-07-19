@@ -1,0 +1,101 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: incidentlens
+          POSTGRES_USER: incidentlens
+          POSTGRES_PASSWORD: incidentlens
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U incidentlens"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      ENVIRONMENT: test
+      DATABASE_URL: postgresql+psycopg://incidentlens:incidentlens@localhost:5432/incidentlens
+      API_TOKEN: incidentlens-ci-token-with-at-least-32-characters
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install -r apps/api/requirements.txt
+      - run: cd apps/api && alembic upgrade head
+      - run: cd apps/api && pytest -q
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 9.15.0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --dir apps/web test:unit
+      - run: pnpm --dir apps/web typecheck
+      - run: pnpm --dir apps/web build
+        env:
+          BACKEND_API_TOKEN: incidentlens-ci-token-with-at-least-32-characters
+
+  e2e:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: incidentlens
+          POSTGRES_USER: incidentlens
+          POSTGRES_PASSWORD: incidentlens
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U incidentlens"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+    env:
+      ENVIRONMENT: test
+      DATABASE_URL: postgresql+psycopg://incidentlens:incidentlens@localhost:5432/incidentlens
+      REDIS_URL: redis://localhost:6379/0
+      API_TOKEN: incidentlens-ci-token-with-at-least-32-characters
+      BACKEND_API_TOKEN: incidentlens-ci-token-with-at-least-32-characters
+      API_URL: http://127.0.0.1:8000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - uses: pnpm/action-setup@v4
+        with: { version: 9.15.0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: pnpm }
+      - run: pip install -r apps/api/requirements.txt
+      - run: pnpm install --frozen-lockfile
+      - run: cd apps/api && alembic upgrade head
+      - run: pnpm --dir apps/web build
+      - run: cd apps/api && nohup uvicorn app.main:app --host 127.0.0.1 --port 8000 > /tmp/incidentlens-api.log 2>&1 &
+      - run: nohup pnpm --dir apps/web start > /tmp/incidentlens-web.log 2>&1 &
+      - run: |
+          for attempt in {1..30}; do
+            curl --fail --silent http://127.0.0.1:8000/api/health/live >/dev/null && curl --fail --silent http://127.0.0.1:3000 >/dev/null && exit 0
+            sleep 2
+          done
+          cat /tmp/incidentlens-api.log /tmp/incidentlens-web.log
+          exit 1
+      - run: pnpm --dir apps/web exec playwright install --with-deps chromium
+      - run: pnpm --dir apps/web test:e2e

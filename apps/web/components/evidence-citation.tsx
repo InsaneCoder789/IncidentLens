@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { AlertTriangle, CheckCircle2, Search, UploadCloud } from "lucide-react";
-import { processAllEvidence, processEvidence, searchEvidence } from "@/lib/api";
+import { processAllEvidence, searchEvidence } from "@/lib/api";
 import type {
   ActionPlan,
   EvidenceItem,
@@ -129,7 +129,7 @@ export function EvidenceUploadPanel() {
   );
 }
 
-export function ProcessEvidenceButton({ evidenceId }: { evidenceId: number }) {
+export function ProcessEvidenceButton({ incidentId }: { incidentId: number }) {
   const [message, setMessage] = useState<string>("");
   const [isPending, startTransition] = useTransition();
 
@@ -141,8 +141,8 @@ export function ProcessEvidenceButton({ evidenceId }: { evidenceId: number }) {
         className="w-full justify-center"
         onClick={() =>
           startTransition(async () => {
-            const result = await processEvidence(evidenceId);
-            setMessage(`${result.status} · ${result.chunks_created} chunks`);
+            const result = await processAllEvidence(incidentId);
+            setMessage(`${result.processed} processed · ${result.chunks_created} chunks`);
           })
         }
       >
@@ -472,6 +472,8 @@ export function ToolCallPanel({ calls }: { calls: ToolCallSummary[] }) {
 
 export function EvalMetricCard({ label, value, sublabel, tone = "accent" }: EvalMetric) {
   const barColor = tone === "danger" ? "#F06A6A" : tone === "warning" ? "#E7A75D" : tone === "success" ? "#4E9E77" : "#56B8C7";
+  const numericValue = value.includes("%") ? Number.parseFloat(value) : Number.parseFloat(value) * 100;
+  const barWidth = Number.isFinite(numericValue) ? Math.min(100, Math.max(0, numericValue)) : 0;
   return (
     <div className="rounded-lg border border-line bg-panel px-4 py-3">
       <div className="label-caps text-slate-500">{label}</div>
@@ -482,14 +484,14 @@ export function EvalMetricCard({ label, value, sublabel, tone = "accent" }: Eval
         </div>
       </div>
       <div className="mt-3 h-1.5 rounded-full bg-[#20262f]">
-        <div className="h-1.5 rounded-full" style={{ width: value.includes("%") ? value : "82%", backgroundColor: barColor }} />
+        <div className="h-1.5 rounded-full" style={{ width: `${barWidth}%`, backgroundColor: barColor }} />
       </div>
     </div>
   );
 }
 
 export function EvalHistoryChart({ labels, accuracy, latency }: { labels: string[]; accuracy: number[]; latency: number[] }) {
-  const maxValue = Math.max(...accuracy, ...latency);
+  const maxValue = Math.max(1, ...accuracy, ...latency);
   return (
     <div className="rounded-xl border border-line bg-panel px-4 py-4">
       <div className="mb-4 flex items-center justify-between gap-3">
@@ -502,7 +504,7 @@ export function EvalHistoryChart({ labels, accuracy, latency }: { labels: string
           <span className="text-[#E7A75D]">latency</span>
         </div>
       </div>
-      <div className="grid grid-cols-7 gap-3">
+      <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${Math.max(1, labels.length)}, minmax(56px, 1fr))` }}>
         {labels.map((label, index) => (
           <div key={label} className="space-y-2">
             <div className="flex h-40 items-end justify-center gap-1 rounded-lg border border-line bg-[#10131b] px-2 py-3">

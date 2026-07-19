@@ -254,6 +254,21 @@ export type InvestigationRunResponse = {
   quality_score: number;
 };
 
+export type Job = {
+  id: string;
+  kind: string;
+  incident_id: number | null;
+  status: "queued" | "running" | "cancellation_requested" | "cancelled" | "completed" | "failed";
+  progress: number;
+  result_json: Record<string, unknown>;
+  error_message: string | null;
+  attempts: number;
+  max_attempts: number;
+  created_at: string;
+  started_at: string | null;
+  completed_at: string | null;
+};
+
 export type IncidentTrace = {
   incident_id: string;
   agent_runs: AgentRun[];

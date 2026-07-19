@@ -26,6 +26,8 @@ class Settings(BaseSettings):
     prometheus_url: str | None = None
     statuspage_url: str | None = None
     runbook_directory: str = "runbooks"
+    job_queue_name: str = "incidentlens:jobs"
+    job_max_attempts: int = 3
     embedding_model_name: str = "sentence-transformers/all-MiniLM-L6-v2"
     embedding_dimension: int = 384
     reasoning_model_primary: str = "gpt-4.1-mini"

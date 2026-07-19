@@ -19,5 +19,5 @@ def test_protected_routes_reject_invalid_bearer_token() -> None:
 
 def test_health_endpoint_remains_available_for_orchestrators() -> None:
     with TestClient(app) as client:
-        response = client.get("/api/health")
+        response = client.get("/api/health/live")
     assert response.status_code == 200

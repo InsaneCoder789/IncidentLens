@@ -4,11 +4,11 @@ IncidentLens AI includes a deterministic local evaluation harness so the project
 
 ## Goals
 
-- score retrieval quality on the seeded payment incident
+- score retrieval quality on the versioned payment-incident evaluation case
 - verify root cause selection
 - measure citation grounding
 - detect unsafe action leakage
-- capture latency and cost trends for mock-mode runs
+- capture latency and cost trends for provider-backed runs
 
 ## Current Dataset
 
@@ -16,7 +16,7 @@ The repository currently ships with:
 
 - `evals/datasets/payment_api_incident.json`
 
-This dataset evaluates the seeded incident against:
+This dataset evaluates the quality-assurance incident case against:
 
 - expected retrieval query
 - expected root cause
@@ -67,7 +67,7 @@ Eval runs are persisted in the `eval_runs` table with:
 
 - retrieval uses the same backend retrieval pipeline as the incident workflow
 - the eval runner triggers investigation if no persisted report exists yet
-- metrics are deterministic in mock mode, which keeps portfolio demos reproducible
+- dataset expectations remain versioned so provider and prompt regressions are comparable
 - failed cases remain structured JSON so they can be rendered in the dashboard and extended later
 
 ## Future Expansion
@@ -76,4 +76,4 @@ Eval runs are persisted in the `eval_runs` table with:
 - regression baselines by prompt version
 - retrieval precision and NDCG
 - hallucination audits over larger report sections
-- provider-vs-mock comparison runs
+- provider and model-version comparison runs

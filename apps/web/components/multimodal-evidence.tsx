@@ -14,7 +14,7 @@ import {
   UploadCloud,
   XCircle,
 } from "lucide-react";
-import { evidenceFileUrl, uploadEvidence } from "@/lib/api";
+import { evidenceFileUrl, processAllEvidence, uploadEvidence } from "@/lib/api";
 import type { EvidenceItem } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -120,7 +120,7 @@ export function ImageEvidencePreview({ evidence }: { evidence: EvidenceItem }) {
         <div className="absolute inset-0 bg-[linear-gradient(rgba(86,141,255,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(86,141,255,0.08)_1px,transparent_1px)] bg-[size:18px_18px]" />
       )}
       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#070b12] to-transparent px-3 pb-3 pt-8 text-[11px] text-slate-300">
-        {metadataString(evidence, "filename") ?? "Seeded visual evidence"}
+        {metadataString(evidence, "filename") ?? "Stored visual evidence"}
       </div>
     </div>
   );
@@ -168,7 +168,7 @@ export function MultimodalEvidenceCard({
         <div className="min-w-0">
           <div className="text-sm font-medium text-white">{evidence.title}</div>
           <div className="mt-1 text-[11px] text-slate-500">
-            {metadataString(evidence, "filename") ?? "Seeded evidence"} · {Number(evidence.metadata_json.file_size_bytes ?? 0) > 0
+            {metadataString(evidence, "filename") ?? "Stored evidence"} · {Number(evidence.metadata_json.file_size_bytes ?? 0) > 0
               ? `${Math.round(Number(evidence.metadata_json.file_size_bytes) / 1024)} KB`
               : "provider metadata unavailable"}
           </div>
@@ -224,7 +224,7 @@ export function MultimodalUploadPanel({ incidentId, compact = false }: { inciden
     setMessage(`Uploading ${file.name}`);
     try {
       const result = await uploadEvidence(incidentId, file, {
-        processImmediately: true,
+        processImmediately: false,
         description: `Uploaded from the IncidentLens evidence workspace for incident ${incidentId}.`,
         onProgress: (value) => {
           setProgress(Math.max(5, Math.min(value, 92)));
@@ -234,6 +234,9 @@ export function MultimodalUploadPanel({ incidentId, compact = false }: { inciden
           }
         },
       });
+      setStage("extracting");
+      setMessage("Queued for extraction, chunking, and embedding...");
+      await processAllEvidence(incidentId);
       setProgress(100);
       setStage("completed");
       setLatestEvidence(result.evidence);

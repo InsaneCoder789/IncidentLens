@@ -4,7 +4,7 @@
 
 IncidentLens is a production-style incident intelligence platform for Site Reliability Engineering teams. It combines multimodal evidence ingestion, retrieval-augmented generation, multi-agent investigation, evaluation, and LLMOps visibility in one approval-aware workflow.
 
-The repository is complete through Phase 7 and runs locally in deterministic mock mode without paid model APIs.
+The repository is complete through Phase 7 and now uses fail-closed, credential-driven model and integration providers. It never substitutes generated fixture data when a dependency is unavailable.
 
 ## Product Overview
 
@@ -23,10 +23,10 @@ This is an incident workspace rather than a chatbot interface. The primary UX is
 
 | Phase | Capability | Implementation |
 | --- | --- | --- |
-| 1 | Product foundation | Next.js application shell, incident dashboard, FastAPI service, seeded incident data |
+| 1 | Product foundation | Next.js application shell, incident dashboard, FastAPI service, persisted incident operations |
 | 2 | Retrieval pipeline | normalization, chunking, embeddings, keyword fallback, pgvector-ready semantic retrieval |
 | 3 | Investigation agents | persisted multi-agent orchestration, report generation, citations, traces, tool calls |
-| 4 | Production adapters | mock GitHub, Sentry, Prometheus, Statuspage, runbook, and prior-incident imports |
+| 4 | Production adapters | credential-driven GitHub, Sentry, Prometheus, Statuspage, and runbook imports |
 | 5 | Evaluation | local dataset runner, history API, quality metrics, failed-case inspection |
 | 6 | LLMOps | model routing, prompt versions, tracing, latency, tokens, cost, runtime settings |
 | 7 | Multimodal evidence | screenshots, architecture diagrams, PDFs, text documents, and voice notes |
@@ -177,8 +177,8 @@ Supported evidence types:
 | Category | Formats | Processing |
 | --- | --- | --- |
 | Images | `.png`, `.jpg`, `.jpeg`, `.webp` | visual extraction, dashboard classification, metadata, OCR-ready provider boundary |
-| Documents | `.pdf`, `.md`, `.txt` | PDF or text extraction, safe fallback, normalization |
-| Audio | `.mp3`, `.wav`, `.m4a` | deterministic voice-note transcription through a swappable provider |
+| Documents | `.pdf`, `.md`, `.txt` | PDF or text extraction, validation, and normalization |
+| Audio | `.mp3`, `.wav`, `.m4a` | credential-backed voice-note transcription through an OpenAI-compatible provider |
 | Connected sources | GitHub, Sentry, Prometheus, Statuspage, runbooks | adapter import into the same evidence contract |
 
 ```mermaid
@@ -195,7 +195,7 @@ flowchart TD
     TEXT --> NORMALIZE
     NORMALIZE --> CHUNK["Citation-Aware Chunking"]
     CHUNK --> EMBED["384-Dimension Embeddings"]
-    EMBED --> INDEX["pgvector or Deterministic Fallback"]
+    EMBED --> INDEX["pgvector Semantic Index"]
     INDEX --> RETRIEVE["Hybrid Ranked Retrieval"]
     RETRIEVE --> REPORT["Grounded Agent Report"]
 ```
@@ -215,7 +215,7 @@ The local evaluation harness measures:
 - average latency
 - average estimated cost
 
-The seeded dataset is located at `evals/datasets/payment_api_incident.json`. Evaluation runs are persisted and displayed in `/evals`.
+The versioned evaluation dataset is located at `evals/datasets/payment_api_incident.json`. It is used only by the evaluation runner; runtime incidents are created through the UI or authenticated API. Evaluation runs are persisted and displayed in `/evals`.
 
 ## Technology Stack
 
@@ -225,7 +225,7 @@ The seeded dataset is located at `evals/datasets/payment_api_incident.json`. Eva
 | Backend | FastAPI, Pydantic, SQLAlchemy |
 | Data | PostgreSQL, pgvector, Redis, local evidence storage |
 | Retrieval | normalization, citation-aware chunking, embeddings, semantic search, keyword fallback |
-| Agent runtime | versioned prompts, deterministic mock model routing, persisted runs and tool calls |
+| Agent runtime | versioned prompts, primary/fallback provider routing, persisted runs and tool calls |
 | Tooling | pnpm workspaces, Python virtual environment, Docker Compose, Makefile, pytest |
 
 ## Repository Structure
@@ -233,7 +233,7 @@ The seeded dataset is located at `evals/datasets/payment_api_incident.json`. Eva
 ```text
 IncidentLensAI/
 ├── apps/
-│   ├── api/                     # FastAPI routes, models, services, agents, seed data
+│   ├── api/                     # FastAPI routes, models, services, agents, and job worker
 │   └── web/                     # Next.js routes, components, brand assets, API client
 ├── config/                      # model and runtime configuration
 ├── docs/                        # architecture and subsystem design documents
@@ -264,10 +264,13 @@ make setup
 cp .env.example .env
 ```
 
-### Seed the demo incident
+### Configure the runtime
 
 ```bash
-make seed
+openssl rand -hex 32
+# Put the generated value in API_TOKEN and BACKEND_API_TOKEN in .env.
+# Configure LLM_API_KEY and any operational integrations you intend to use.
+make migrate
 ```
 
 ### Run locally
@@ -308,7 +311,9 @@ make docker-down
 | `FRONTEND_PORT` | Next.js port |
 | `NEXT_PUBLIC_API_URL` | browser-visible API base URL |
 | `ENVIRONMENT` | runtime environment name |
-| `MOCK_MODE` | deterministic local model and integration behavior |
+| `API_TOKEN` | server-side bearer token required by protected FastAPI routes |
+| `LLM_API_KEY` | credential for the configured OpenAI-compatible model, vision, and transcription APIs |
+| `BACKEND_API_TOKEN` | matching server-only token used by the Next.js backend proxy |
 | `EVIDENCE_STORAGE_DIR` | local evidence file directory |
 | `MAX_EVIDENCE_UPLOAD_BYTES` | maximum accepted upload size |
 
@@ -334,6 +339,7 @@ DELETE /api/evidence/{evidence_id}
 GET    /api/evidence/{evidence_id}/file
 POST   /api/evidence/{evidence_id}/process
 POST   /api/incidents/{incident_id}/evidence/process-all
+POST   /api/incidents/{incident_id}/evidence-jobs
 GET    /api/incidents/{incident_id}/chunks
 POST   /api/retrieval/search
 ```
@@ -341,7 +347,9 @@ POST   /api/retrieval/search
 ### Investigation and telemetry
 
 ```text
-POST /api/incidents/{incident_id}/investigate
+POST /api/incidents/{incident_id}/investigation-jobs
+GET  /api/jobs/{job_id}
+POST /api/jobs/{job_id}/cancel
 GET  /api/incidents/{incident_id}/report
 GET  /api/incidents/{incident_id}/trace
 ```
@@ -352,8 +360,10 @@ GET  /api/incidents/{incident_id}/trace
 GET  /api/integrations/health
 POST /api/integrations/{integration_key}/incidents/{incident_id}/import
 GET  /api/evals/history
-POST /api/evals/run
+POST /api/evaluation-jobs
 GET  /api/llmops/overview
+GET  /api/settings
+PATCH /api/settings
 ```
 
 Interactive API documentation is available at `http://localhost:8000/docs` while the backend is running.
@@ -368,18 +378,26 @@ make test
 
 This executes:
 
-- backend pytest coverage for multimodal classification, extraction fallback, secure storage paths, upload, retrieval, and report integration
+- backend pytest coverage for authentication, incident operations, durable jobs, multimodal extraction, secure storage paths, retrieval, and report integration
+- Vitest component coverage
 - TypeScript type checking
 - the optimized Next.js production build for all application routes
+
+Run the desktop and mobile browser suite against running API and web services:
+
+```bash
+make test-e2e
+```
 
 Test retrieval manually:
 
 ```bash
 curl -X POST http://localhost:8000/api/retrieval/search \
+  -H "Authorization: Bearer $API_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "incident_id": 1,
-    "query": "What caused the payment API failure?",
+    "incident_id": 42,
+    "query": "What signals explain this incident?",
     "top_k": 8,
     "score_threshold": 0.2
   }'
@@ -388,16 +406,17 @@ curl -X POST http://localhost:8000/api/retrieval/search \
 Test multimodal upload and retrieval:
 
 ```bash
-curl -X POST http://localhost:8000/api/incidents/1/evidence/upload \
+curl -X POST http://localhost:8000/api/incidents/$INCIDENT_ID/evidence/upload \
+  -H "Authorization: Bearer $API_TOKEN" \
   -F "file=@/absolute/path/to/grafana-payment-errors.png" \
   -F "title=Grafana payment error spike" \
   -F "description=Dashboard captured during the payment incident" \
   -F "process_immediately=true"
 ```
 
-## Demo Scenario
+## Evaluation Scenario
 
-The seeded scenario models payment failures after release `v1.42.0`:
+The versioned quality-assurance dataset models payment failures after release `v1.42.0`:
 
 - service: `payments-api`
 - leading root cause: webhook validation regression
@@ -410,16 +429,16 @@ The seeded scenario models payment failures after release `v1.42.0`:
 
 The expected report selects the webhook validation regression, cites the supporting evidence, records missing evidence, and keeps rollback or feature-flag changes approval-gated.
 
-## Demo Walkthrough
+## Product Walkthrough
 
 1. Open `/` and review the production command dashboard.
-2. Use `/incidents` to select and triage the seeded payment incident.
-3. Open `/evidence`, import connected sources, and upload multimodal evidence.
-4. Search the indexed chunks and review ranked citations.
-5. Open `/incidents/1` and run the persisted investigation workflow.
+2. Use `/incidents` to create an incident, assign an owner, and begin triage.
+3. Open `/evidence`, import configured connected sources, and upload multimodal evidence.
+4. Process the evidence in the durable job queue, then review ranked citations.
+5. Open the incident workspace and run the persisted investigation job.
 6. Review the report, root-cause confidence, missing evidence, and gated actions.
-7. Open `/incidents/1/trace` and expand tool-call input and output JSON.
-8. Run the evaluation suite from `/evals`.
+7. Open the incident trace and expand tool-call input and output JSON.
+8. Run the versioned evaluation suite from `/evals`.
 9. Review model, prompt, tracing, and governance controls in `/settings`.
 
 ## Security And Governance
@@ -429,7 +448,7 @@ The expected report selects the webhook validation regression, cites the support
 - risky recommendations are surfaced but never automatically executed
 - evidence citations remain attached to report claims
 - model and prompt versions are visible in persisted traces
-- mock mode is enabled by default for safe local operation
+- missing providers fail visibly and never return fabricated successful data
 - runtime uploads, environment files, and credentials are excluded from Git
 
 ## Documentation

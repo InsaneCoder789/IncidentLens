@@ -1,21 +1,42 @@
+import Link from "next/link";
 import { IntegrationHealthPanel } from "@/components/integration-health-panel";
+import { EvidenceIncidentSelector } from "@/components/evidence-incident-selector";
 import { PageIntro, SectionHeading } from "@/components/page-intro";
 import { ChunkList, RetrievalResults, SemanticSearchPanel, VectorIndexStatusCard } from "@/components/evidence-citation";
 import { EmbeddingStatusBadge, ProcessingStatusBadge, SourceTypeBadge } from "@/components/evidence-citation";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { MultimodalEvidenceCard, MultimodalUploadPanel } from "@/components/multimodal-evidence";
 import { Database, FileSearch } from "lucide-react";
-import { getIncidentChunks, getIncidentEvidence, getIntegrationHealth, searchEvidence } from "@/lib/api";
+import { getIncidentChunks, getIncidentEvidence, getIncidents, getIntegrationHealth, getRuntimeSettings, searchEvidence } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
 
-export default async function EvidencePage() {
-  const [evidence, chunks, retrieval, integrations] = await Promise.all([
-    getIncidentEvidence(1),
-    getIncidentChunks(1),
-    searchEvidence({ incident_id: 1, query: "What caused the payment API failure?", top_k: 8, score_threshold: 0.2 }),
+export default async function EvidencePage({ searchParams }: { searchParams: Promise<{ incident?: string }> }) {
+  const incidents = await getIncidents();
+  const requestedId = Number((await searchParams).incident);
+  const activeIncident = incidents.find((incident) => incident.id === requestedId) ?? incidents[0];
+  if (!activeIncident) {
+    return (
+      <div>
+        <PageIntro eyebrow="Knowledge pipeline" title="Evidence workspace" description="Create an incident before collecting operational evidence." />
+        <Card><CardContent className="py-14 text-center"><Database className="mx-auto h-6 w-6 text-muted" /><div className="mt-4 text-sm font-medium text-text">No incidents available</div><div className="mt-1 text-xs text-muted">Evidence is always attached to a persisted incident.</div><Link href="/incidents" className="mt-5 inline-block"><Button>Create an incident</Button></Link></CardContent></Card>
+      </div>
+    );
+  }
+
+  const [evidence, chunks, retrieval, integrations, runtimeSettings] = await Promise.all([
+    getIncidentEvidence(activeIncident.id),
+    getIncidentChunks(activeIncident.id),
+    searchEvidence({ incident_id: activeIncident.id, query: `${activeIncident.title}. ${activeIncident.description}`, top_k: 8, score_threshold: 0.2 }),
     getIntegrationHealth(),
+    getRuntimeSettings(),
   ]);
+  const indexStatus = evidence.length === 0
+    ? "empty"
+    : evidence.every((item) => item.embedding_status === "completed")
+      ? "ready"
+      : evidence.some((item) => item.processing_status === "failed") ? "degraded" : "processing";
 
   const chunkCounts = new Map<number, number>();
   const citationIds = new Map<number, string[]>();
@@ -36,18 +57,19 @@ export default async function EvidencePage() {
 
   return (
     <div>
-      <PageIntro eyebrow="Incident 0001 / corpus" title="Evidence workspace" description="Ingest screenshots, PDFs, voice notes, logs, and connected service data. Every source is extracted, normalized, chunked, embedded, and kept citation-ready for investigation." meta={<div className="flex flex-wrap gap-2"><span className="rounded-full border border-line/10 bg-panel px-2.5 py-1 font-mono text-[10px] text-muted">{evidence.length} sources</span><span className="rounded-full border border-line/10 bg-panel px-2.5 py-1 font-mono text-[10px] text-muted">{chunks.length} chunks</span><span className="rounded-full border border-success/20 bg-success/5 px-2.5 py-1 font-mono text-[10px] text-success">index ready</span></div>} />
+      <PageIntro eyebrow={`INC-${String(activeIncident.id).padStart(4, "0")} / corpus`} title="Evidence workspace" description="Ingest screenshots, PDFs, voice notes, logs, and connected service data. Every source is extracted, normalized, chunked, embedded, and kept citation-ready for investigation." meta={<div className="flex flex-wrap gap-2"><span className="rounded-full border border-line/10 bg-panel px-2.5 py-1 font-mono text-[10px] text-muted">{evidence.length} sources</span><span className="rounded-full border border-line/10 bg-panel px-2.5 py-1 font-mono text-[10px] text-muted">{chunks.length} chunks</span><span className="rounded-full border border-line/15 bg-panel px-2.5 py-1 font-mono text-[10px] text-muted">index {indexStatus}</span></div>} />
     <div className="space-y-5">
-      <MultimodalUploadPanel incidentId={1} />
+      <EvidenceIncidentSelector incidents={incidents} activeIncidentId={activeIncident.id} />
+      <MultimodalUploadPanel incidentId={activeIncident.id} />
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-3">
           <div>
             <SectionHeading eyebrow="Connected sources" title="Integration health" description="Production adapters remain separated from agent logic and can import evidence into this incident." />
           </div>
-          <IntegrationHealthPanel incidentId={1} integrations={integrations} />
+          <IntegrationHealthPanel incidentId={activeIncident.id} integrations={integrations} />
         </div>
-        <VectorIndexStatusCard />
+        <VectorIndexStatusCard status={indexStatus} embeddingModel={runtimeSettings.embedding_model_name} />
       </div>
 
       <Card>
@@ -114,7 +136,7 @@ export default async function EvidencePage() {
         </Card>
 
         <div className="space-y-4">
-          <SemanticSearchPanel incidentId={1} initialResults={retrieval.results} metadataFilters={{ service: "payments-api" }} />
+          <SemanticSearchPanel incidentId={activeIncident.id} initialResults={retrieval.results} metadataFilters={{ service: activeIncident.affected_service }} />
           <Card>
             <CardHeader>
               <SectionHeading eyebrow="Ranking" title="Retrieved evidence" />

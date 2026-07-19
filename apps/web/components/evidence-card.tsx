@@ -14,7 +14,7 @@ export function EvidenceCard({ evidence, chunkCount = 0 }: { evidence: EvidenceI
           <SourceTypeBadge sourceType={evidence.source_type} />
         </div>
         <EvidenceProcessingStatus processingStatus={evidence.processing_status} embeddingStatus={evidence.embedding_status} chunkCount={chunkCount} />
-        <ProcessEvidenceButton evidenceId={evidence.id} />
+        <ProcessEvidenceButton incidentId={evidence.incident_id} />
       </CardContent>
     </Card>
   );

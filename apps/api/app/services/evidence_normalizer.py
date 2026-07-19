@@ -6,16 +6,8 @@ import re
 from app.models.evidence import EvidenceItem
 
 
-PLACEHOLDER_EXTRACTIONS = {
-    "screenshot": "Screenshot evidence placeholder extraction. OCR not implemented yet.",
-    "voice_note": "Voice note placeholder extraction. ASR not implemented yet.",
-}
-
-
 def normalize_evidence_content(evidence_item: EvidenceItem) -> str:
     content = evidence_item.raw_content.strip()
-    if evidence_item.source_type in PLACEHOLDER_EXTRACTIONS and not content:
-        content = PLACEHOLDER_EXTRACTIONS[evidence_item.source_type]
 
     metadata_lines = []
     for key, value in sorted((evidence_item.metadata_json or {}).items()):
@@ -30,4 +22,3 @@ def normalize_evidence_content(evidence_item: EvidenceItem) -> str:
     normalized = re.sub(r"[ \t]+", " ", normalized)
     normalized = re.sub(r"\n{3,}", "\n\n", normalized)
     return normalized.strip()
-

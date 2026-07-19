@@ -25,17 +25,53 @@ services:
       ENVIRONMENT: development
       API_TOKEN: ${API_TOKEN:?Set API_TOKEN in .env}
       CORS_ALLOWED_ORIGINS: http://localhost:3000
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+      GITHUB_REPOSITORY: ${GITHUB_REPOSITORY:-}
+      SENTRY_AUTH_TOKEN: ${SENTRY_AUTH_TOKEN:-}
+      SENTRY_ORGANIZATION: ${SENTRY_ORGANIZATION:-}
+      SENTRY_PROJECT: ${SENTRY_PROJECT:-}
+      PROMETHEUS_URL: ${PROMETHEUS_URL:-}
+      STATUSPAGE_URL: ${STATUSPAGE_URL:-}
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_started
+      redis:
+        condition: service_started
     ports:
       - "8000:8000"
     volumes:
       - ./apps/api:/app
+      - evidence_data:/app/storage/evidence
+
+  worker:
+    build:
+      context: ./apps/api
+    command: ["python", "-m", "app.jobs.worker"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://incidentlens:incidentlens@postgres:5432/incidentlens
+      REDIS_URL: redis://redis:6379/0
+      ENVIRONMENT: development
+      API_TOKEN: ${API_TOKEN:?Set API_TOKEN in .env}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+      GITHUB_REPOSITORY: ${GITHUB_REPOSITORY:-}
+      SENTRY_AUTH_TOKEN: ${SENTRY_AUTH_TOKEN:-}
+      SENTRY_ORGANIZATION: ${SENTRY_ORGANIZATION:-}
+      SENTRY_PROJECT: ${SENTRY_PROJECT:-}
+      PROMETHEUS_URL: ${PROMETHEUS_URL:-}
+      STATUSPAGE_URL: ${STATUSPAGE_URL:-}
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./apps/api:/app
+      - evidence_data:/app/storage/evidence
 
   web:
     build:
-      context: ./apps/web
+      context: .
+      dockerfile: apps/web/Dockerfile
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:8000
       API_URL: http://api:8000
@@ -44,8 +80,7 @@ services:
       - api
     ports:
       - "3000:3000"
-    volumes:
-      - ./apps/web:/app
 
 volumes:
   postgres_data:
+  evidence_data:

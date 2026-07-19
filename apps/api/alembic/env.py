@@ -13,9 +13,11 @@ from app.models.incident import Incident
 from app.models.evidence import EvidenceItem, EvidenceChunk
 from app.models.investigation import AgentRun, EvalRun, IncidentReport, ModelRun, PromptVersion, ToolCall
 from app.models.operations import ApprovalRequest, AuditEvent, IncidentEvent, RuntimeSetting
+from app.models.jobs import Job
 
 config = context.config
-fileConfig(config.config_file_name)
+if config.config_file_name and config.file_config.has_section("loggers"):
+    fileConfig(config.config_file_name)
 target_metadata = Base.metadata
 
 

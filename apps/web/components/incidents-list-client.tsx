@@ -10,6 +10,7 @@ import { SeverityBadge } from "@/components/severity-badge";
 import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { CreateIncidentDialog } from "@/components/incident-controls";
 
 export function IncidentsListClient({ incidents }: { incidents: Incident[] }) {
   const [search, setSearch] = useState("");
@@ -23,11 +24,10 @@ export function IncidentsListClient({ incidents }: { incidents: Incident[] }) {
   }), [incidents, search, severity, status]);
   const selected = incidents.find((incident) => incident.id === selectedId) ?? filtered[0] ?? incidents[0];
 
-  if (!selected) return <div className="py-20 text-center text-sm text-muted">No incidents are available.</div>;
-
   return (
     <div>
-      <PageIntro eyebrow="Production queue" title="Incidents" description="Prioritize by impact, inspect the current hypothesis, and enter a grounded investigation with the relevant context already selected." meta={<div className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted">{filtered.length} shown / {incidents.length} total</div>} />
+      <PageIntro eyebrow="Production queue" title="Incidents" description="Prioritize by impact, inspect the current hypothesis, and enter a grounded investigation with the relevant context already selected." meta={<div className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted">{filtered.length} shown / {incidents.length} total</div>} actions={<CreateIncidentDialog />} />
+      {!selected ? <div className="rounded-xl border border-dashed border-line/15 py-20 text-center text-sm text-muted">No incidents are available. Create the first incident to begin.</div> :
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
         <Card>
           <CardHeader><SectionHeading eyebrow="Triage" title="Incident queue" description="Select any row to update the context rail. Open the title to enter its workspace." /></CardHeader>
@@ -50,7 +50,7 @@ export function IncidentsListClient({ incidents }: { incidents: Incident[] }) {
 
               <div className="mt-5 rounded-xl border border-accent/12 bg-accent/[0.045] p-4">
                 <div className="label-caps text-accent">Current hypothesis</div>
-                <p className="mt-2 text-sm leading-6 text-text">A release-timed signature validation regression is the leading cause, supported by traces and correlated payment error spikes.</p>
+                <p className="mt-2 text-sm leading-6 text-text">{selected.latest_confidence_score === null ? "Run an evidence-grounded investigation to establish the leading hypothesis." : "A persisted investigation report is available for review in the workspace."}</p>
                 <div className="mt-3 font-mono text-[10px] uppercase tracking-[0.08em] text-muted">Grounded confidence / {Math.round((selected.latest_confidence_score ?? 0) * 100)}%</div>
               </div>
 
@@ -59,6 +59,7 @@ export function IncidentsListClient({ incidents }: { incidents: Incident[] }) {
           </Card>
         </aside>
       </div>
+      }
     </div>
   );
 }
