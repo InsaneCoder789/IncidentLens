@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -66,7 +67,7 @@ def test_storage_path_cannot_escape_evidence_directory() -> None:
 
 
 def test_upload_process_search_and_report_evidence() -> None:
-    with TestClient(app, headers={"Authorization": "Bearer incidentlens-test-token-not-for-production"}) as client:
+    with TestClient(app, headers={"Authorization": f"Bearer {os.environ['API_TOKEN']}"}) as client:
         incidents = client.get("/api/incidents").json()
         incident_id = incidents[0]["id"]
 

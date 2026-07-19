@@ -1,9 +1,11 @@
+import os
+
 from fastapi.testclient import TestClient
 
 from app.main import app
 
 
-AUTH = {"Authorization": "Bearer incidentlens-test-token-not-for-production"}
+AUTH = {"Authorization": f"Bearer {os.environ['API_TOKEN']}"}
 
 
 def test_dashboard_uses_persisted_incidents() -> None:

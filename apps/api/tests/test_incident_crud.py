@@ -1,9 +1,11 @@
+import os
+
 from fastapi.testclient import TestClient
 
 from app.main import app
 
 
-AUTH = {"Authorization": "Bearer incidentlens-test-token-not-for-production"}
+AUTH = {"Authorization": f"Bearer {os.environ['API_TOKEN']}"}
 
 
 def test_incident_create_update_and_delete_round_trip() -> None:
