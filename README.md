@@ -1,10 +1,10 @@
-![IncidentLens AI banner](docs/assets/incidentlens-banner.svg)
+![IncidentLens banner](docs/assets/incidentlens-banner.svg)
 
-# IncidentLens 
+# IncidentLens
 
-IncidentLens is a production-style incident intelligence platform for Site Reliability Engineering teams. It combines multimodal evidence ingestion, retrieval-augmented generation, multi-agent investigation, evaluation, and LLMOps visibility in one approval-aware workflow.
+IncidentLens is an incident intelligence platform for Site Reliability Engineering teams. It combines multimodal evidence ingestion, evidence-grounded investigation, evaluation, and LLMOps visibility in one approval-aware workflow.
 
-The repository is complete through Phase 7 and now uses fail-closed, credential-driven model and integration providers. It never substitutes generated fixture data when a dependency is unavailable.
+The Tracks A–G production scope is implemented. Runtime data is persisted, long-running work uses a durable queue, providers are credential-driven, and unavailable dependencies fail visibly instead of returning invented results. Test-only fakes and the versioned evaluation dataset never enter runtime workflows.
 
 ## Product Overview
 
@@ -19,17 +19,17 @@ IncidentLens turns fragmented operational signals into a grounded investigation 
 
 This is an incident workspace rather than a chatbot interface. The primary UX is designed for triage, evidence inspection, reasoning review, and controlled action.
 
-## Current Capabilities
+## Delivery Status
 
-| Phase | Capability | Implementation |
+| Track | Area | Completed implementation |
 | --- | --- | --- |
-| 1 | Product foundation | Next.js application shell, incident dashboard, FastAPI service, persisted incident operations |
-| 2 | Retrieval pipeline | normalization, chunking, embeddings, keyword fallback, pgvector-ready semantic retrieval |
-| 3 | Investigation agents | persisted multi-agent orchestration, report generation, citations, traces, tool calls |
-| 4 | Production adapters | credential-driven GitHub, Sentry, Prometheus, Statuspage, and runbook imports |
-| 5 | Evaluation | local dataset runner, history API, quality metrics, failed-case inspection |
-| 6 | LLMOps | model routing, prompt versions, tracing, latency, tokens, cost, runtime settings |
-| 7 | Multimodal evidence | screenshots, architecture diagrams, PDFs, text documents, and voice notes |
+| A | Security and schema | bearer authentication, server-only proxy token, production validation, Alembic migrations |
+| B | Operational workflows | incident CRUD, events, approvals, audit history, dashboard, and persisted runtime settings |
+| C | Real providers | OpenAI-compatible models, embeddings, GitHub, Sentry, Prometheus, Statuspage, and runbooks |
+| D | Durable execution | PostgreSQL job ledger, Redis queue, worker retries, idempotency, progress, and cancellation |
+| E | Quality gates | backend tests, component tests, desktop/mobile browser tests, production build, and GitHub Actions |
+| F | Operations | migration-first startup, API/worker/web containers, readiness checks, JSON logs, and runbook |
+| G | Product completion | live-data UX, incident controls, responsive states, documentation, and removal of runtime fixtures |
 
 ## System Architecture
 
@@ -43,11 +43,13 @@ flowchart LR
 
     subgraph Service["Incident Intelligence API"]
         API["FastAPI"]
+        JOBS["Durable Job API"]
         RAG["Evidence Processing and Retrieval"]
         AGENTS["Investigation Agent Graph"]
         EVALS["Evaluation Harness"]
         LLMOPS["Prompt, Trace, and Cost Controls"]
         API --> RAG
+        API --> JOBS
         API --> AGENTS
         API --> EVALS
         API --> LLMOPS
@@ -57,6 +59,7 @@ flowchart LR
         DB[("PostgreSQL")]
         VECTOR[("pgvector")]
         REDIS[("Redis")]
+        LEDGER["Job Ledger"]
         FILES["Local Evidence Storage"]
         PROMPTS["Versioned Prompt Registry"]
     end
@@ -75,6 +78,13 @@ flowchart LR
     RAG --> DB
     RAG --> VECTOR
     API --> REDIS
+    JOBS --> REDIS
+    JOBS --> LEDGER
+    REDIS --> WORKER["Background Worker"]
+    WORKER --> AGENTS
+    WORKER --> RAG
+    WORKER --> EVALS
+    LEDGER --> DB
     API --> FILES
     AGENTS --> PROMPTS
     RAG --> AGENTS
@@ -90,6 +100,7 @@ sequenceDiagram
     actor SRE as On-call Engineer
     participant UI as Next.js Workspace
     participant API as FastAPI
+    participant Q as Durable Job Queue
     participant EX as Multimodal Extractors
     participant RAG as Retrieval Pipeline
     participant AG as Agent Workflow
@@ -97,13 +108,15 @@ sequenceDiagram
 
     SRE->>UI: Select incident and add evidence
     UI->>API: Upload or import evidence
-    API->>EX: Detect type and extract content
+    API->>Q: Queue evidence processing
+    Q->>EX: Detect type and extract content
     EX-->>API: Text, transcript, metadata, classification
     API->>RAG: Normalize, chunk, embed, and index
     RAG->>DB: Persist evidence chunks and citations
     SRE->>UI: Run investigation
-    UI->>API: POST incident investigation
-    API->>AG: Start versioned agent workflow
+    UI->>API: Queue incident investigation
+    API->>Q: Persist job and publish work
+    Q->>AG: Start versioned agent workflow
     AG->>RAG: Retrieve grounded incident context
     RAG-->>AG: Ranked evidence with EVID citations
     AG->>DB: Persist runs, tool calls, report, and evaluation
@@ -111,21 +124,16 @@ sequenceDiagram
     UI-->>SRE: Review evidence and request approval
 ```
 
-## Phase Progression
+## Delivery Flow
 
 ```mermaid
 flowchart LR
-    P1["Phase 1\nFoundation"] --> P2["Phase 2\nRAG"]
-    P2 --> P3["Phase 3\nAgents"]
-    P3 --> P4["Phase 4\nIntegrations"]
-    P4 --> P5["Phase 5\nEvaluations"]
-    P5 --> P6["Phase 6\nLLMOps"]
-    P6 --> P7["Phase 7\nMultimodal"]
-
-    P2 -. "citations" .-> P7
-    P3 -. "reports and traces" .-> P7
-    P5 -. "quality gates" .-> P7
-    P6 -. "model governance" .-> P7
+    A["A · Secure foundation"] --> B["B · Persist operations"]
+    B --> C["C · Connect providers"]
+    C --> D["D · Queue long-running work"]
+    D --> E["E · Verify behavior"]
+    E --> F["F · Operate safely"]
+    F --> G["G · Complete product flow"]
 ```
 
 ## Frontend Experience
@@ -148,7 +156,7 @@ The frontend includes:
 - visible upload, extraction, chunking, embedding, and retrieval states
 - approval-request state for production-changing recommendations
 - designed loading, empty, failure, and no-result states
-- deterministic API fallbacks that keep the local demo usable
+- explicit dependency and provider errors without fabricated runtime results
 
 ## Design System
 
@@ -223,10 +231,11 @@ The versioned evaluation dataset is located at `evals/datasets/payment_api_incid
 | --- | --- |
 | Frontend | Next.js 15, React 19, TypeScript, Tailwind CSS, shadcn-style Radix primitives |
 | Backend | FastAPI, Pydantic, SQLAlchemy |
-| Data | PostgreSQL, pgvector, Redis, local evidence storage |
+| Data | PostgreSQL, pgvector, Redis, durable evidence volume |
 | Retrieval | normalization, citation-aware chunking, embeddings, semantic search, keyword fallback |
 | Agent runtime | versioned prompts, primary/fallback provider routing, persisted runs and tool calls |
-| Tooling | pnpm workspaces, Python virtual environment, Docker Compose, Makefile, pytest |
+| Job runtime | PostgreSQL job ledger, Redis queue, dedicated worker, retries, cancellation, idempotency |
+| Tooling | pnpm workspaces, Python virtual environment, Docker Compose, Makefile, pytest, Vitest, Playwright |
 
 ## Repository Structure
 
@@ -294,6 +303,8 @@ make dev-api
 make docker-up
 ```
 
+Docker Compose starts PostgreSQL with pgvector, Redis, the migration-first API, the background worker, and the Next.js web application. The API is ready at `http://localhost:8000/api/health/ready` when both PostgreSQL and Redis are available.
+
 Stop and remove local containers:
 
 ```bash
@@ -316,6 +327,10 @@ make docker-down
 | `BACKEND_API_TOKEN` | matching server-only token used by the Next.js backend proxy |
 | `EVIDENCE_STORAGE_DIR` | local evidence file directory |
 | `MAX_EVIDENCE_UPLOAD_BYTES` | maximum accepted upload size |
+| `JOB_QUEUE_NAME` | Redis queue used by the background worker |
+| `JOB_MAX_ATTEMPTS` | maximum attempts for a failed durable job |
+| `GITHUB_TOKEN`, `SENTRY_AUTH_TOKEN` | optional credentials for connected evidence sources |
+| `PROMETHEUS_URL`, `STATUSPAGE_URL` | optional operational source endpoints |
 
 ## API Workflows
 
@@ -411,8 +426,23 @@ curl -X POST http://localhost:8000/api/incidents/$INCIDENT_ID/evidence/upload \
   -F "file=@/absolute/path/to/grafana-payment-errors.png" \
   -F "title=Grafana payment error spike" \
   -F "description=Dashboard captured during the payment incident" \
-  -F "process_immediately=true"
+  -F "process_immediately=false"
+
+curl -X POST http://localhost:8000/api/incidents/$INCIDENT_ID/evidence-jobs \
+  -H "Authorization: Bearer $API_TOKEN" \
+  -H "Idempotency-Key: evidence-$INCIDENT_ID-$(date +%s)"
 ```
+
+## Release Readiness
+
+- runtime routes use persisted data rather than bundled incident fixtures
+- the browser communicates through the authenticated Next.js backend proxy
+- investigation, evidence, and evaluation work is queued and recorded in the job ledger
+- startup applies database migrations before API traffic is accepted
+- readiness checks cover PostgreSQL and Redis; liveness remains independent
+- structured logs include request IDs, status codes, paths, and request duration
+- GitHub Actions verifies migrations, backend tests, frontend tests, builds, and browser journeys
+- external providers require real credentials and expose configuration failures clearly
 
 ## Evaluation Scenario
 
@@ -462,3 +492,4 @@ The expected report selects the webhook validation regression, cites the support
 | [`docs/eval-design.md`](docs/eval-design.md) | datasets, metrics, execution, and regression analysis |
 | [`docs/llmops.md`](docs/llmops.md) | model routing, prompts, tracing, latency, tokens, and cost |
 | [`docs/multimodal-design.md`](docs/multimodal-design.md) | Phase 7 extraction, storage, retrieval, and frontend behavior |
+| [`docs/operations-runbook.md`](docs/operations-runbook.md) | release, rollback, database, queue, and provider recovery procedures |
