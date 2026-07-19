@@ -267,8 +267,8 @@ IncidentLensAI/
 ### Install
 
 ```bash
-git clone https://github.com/InsaneCoder789/IncidentLensAI.git
-cd IncidentLensAI
+git clone https://github.com/InsaneCoder789/IncidentLens.git
+cd IncidentLens
 make setup
 cp .env.example .env
 ```
