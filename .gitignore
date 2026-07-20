@@ -18,6 +18,8 @@ coverage
 *.tsbuildinfo
 work/
 outputs/qa/
+outputs/ui-review/
+design-references/
 .playwright-mcp/
 apps/web/test-results/
 apps/api/storage/evidence/*

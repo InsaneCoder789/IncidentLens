@@ -23,7 +23,7 @@ This is an incident workspace rather than a chatbot interface. The primary UX is
 
 | Track | Area | Completed implementation |
 | --- | --- | --- |
-| A | Security and schema | bearer authentication, server-only proxy token, production validation, Alembic migrations |
+| A | Security and schema | operator accounts, expiring web sessions, bearer service authentication, server-only proxy token, production validation, Alembic migrations |
 | B | Operational workflows | incident CRUD, events, approvals, audit history, dashboard, and persisted runtime settings |
 | C | Real providers | OpenAI-compatible models, embeddings, GitHub, Sentry, Prometheus, Statuspage, and runbooks |
 | D | Durable execution | PostgreSQL job ledger, Redis queue, worker retries, idempotency, progress, and cancellation |
@@ -36,8 +36,12 @@ This is an incident workspace rather than a chatbot interface. The primary UX is
 ```mermaid
 flowchart LR
     subgraph Client["Operations Console"]
+        PUBLIC["Editorial Public Site"]
+        AUTH["Login and Workspace Signup"]
         WEB["Next.js 15 Web App"]
         UX["Command Search and Responsive Workspaces"]
+        PUBLIC --> AUTH
+        AUTH --> WEB
         WEB --> UX
     end
 
@@ -57,6 +61,7 @@ flowchart LR
 
     subgraph Data["Persistence"]
         DB[("PostgreSQL")]
+        SESSIONS["Users and Expiring Sessions"]
         VECTOR[("pgvector")]
         REDIS[("Redis")]
         LEDGER["Job Ledger"]
@@ -76,6 +81,8 @@ flowchart LR
     WEB --> API
     Sources --> API
     RAG --> DB
+    AUTH --> SESSIONS
+    SESSIONS --> DB
     RAG --> VECTOR
     API --> REDIS
     JOBS --> REDIS
@@ -140,13 +147,50 @@ flowchart LR
 
 | Route | Purpose |
 | --- | --- |
-| `/` | incident command dashboard, active metrics, production readiness, and queue |
+| `/` | public editorial product story, method, evidence narrative, human-control model, and calls to action |
+| `/login` | protected operator login with an expiring server-backed session |
+| `/signup` | workspace and operator account creation |
+| `/dashboard` | incident command dashboard, active metrics, production readiness, and queue |
 | `/incidents` | selectable incident triage with filters and a contextual summary rail |
 | `/incidents/[id]` | investigation workspace with timeline, evidence, report, hypotheses, and gated actions |
 | `/incidents/[id]/trace` | agent graph, run telemetry, expandable tool-call JSON, and report snapshot |
 | `/evidence` | multimodal upload, connected-source import, processing state, chunks, and retrieval |
 | `/evals` | evaluation history, quality metrics, regressions, and failed cases |
 | `/settings` | model routing, embeddings, tracing, prompt versions, cost controls, and governance |
+
+### Visual Direction
+
+The public and authentication experience was rebuilt through an image-first design process. Generated page references established an editorial incident-observatory system rather than a conventional SaaS layout. The implemented UI uses:
+
+- a custom generated optical evidence mark
+- full-bleed incident observatory and evidence archive imagery
+- asymmetric paper-plane authentication layouts instead of centered cards
+- condensed editorial typography with a cyan causal thread and restrained orange decision controls
+- a compact operational command rail after authentication
+
+The production image assets live in `apps/web/public/brand` and `apps/web/public/visuals`. Public pages remain responsive, accessible, and separate from the authenticated operations shell.
+
+### Authentication Flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Operator
+    participant Web as Next.js Web App
+    participant API as FastAPI
+    participant DB as PostgreSQL
+
+    Operator->>Web: Create workspace or sign in
+    Web->>API: Submit credentials with service authentication
+    API->>DB: Validate account and persist hashed session token
+    API-->>Web: Return expiring operator session
+    Web-->>Operator: Set secure HttpOnly cookie
+    Operator->>Web: Open protected workspace
+    Web->>API: Validate operator session
+    API->>DB: Check expiry and revocation
+    API-->>Web: Confirm authenticated operator
+    Web-->>Operator: Render live incident workspace
+```
 
 The frontend includes:
 
