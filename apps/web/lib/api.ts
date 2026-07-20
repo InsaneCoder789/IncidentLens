@@ -23,6 +23,7 @@ import type {
   RetrievalSearchResponse,
   RuntimeSettings,
 } from "@/lib/types";
+import { getApiErrorMessage } from "@/lib/api-error";
 
 const SERVER_API_URL = process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const CLIENT_API_URL = "/api/backend";
@@ -60,8 +61,8 @@ async function requestJson<T>(path: string, init?: RequestInit, timeoutMs = API_
       signal: controller.signal,
     });
     if (!response.ok) {
-      const payload = (await response.json().catch(() => null)) as { detail?: string } | null;
-      throw new ApiError(payload?.detail ?? `Request failed with status ${response.status}`, response.status);
+      const payload: unknown = await response.json().catch(() => null);
+      throw new ApiError(getApiErrorMessage(payload, `Request failed with status ${response.status}`), response.status);
     }
     if (response.status === 204) return undefined as T;
     return (await response.json()) as T;
@@ -184,8 +185,8 @@ export async function uploadEvidence(
         return;
       }
       try {
-        const payload = JSON.parse(request.responseText) as { detail?: string };
-        reject(new ApiError(payload.detail ?? `Upload failed with status ${request.status}`, request.status));
+        const payload: unknown = JSON.parse(request.responseText);
+        reject(new ApiError(getApiErrorMessage(payload, `Upload failed with status ${request.status}`), request.status));
       } catch {
         reject(new ApiError(`Upload failed with status ${request.status}`, request.status));
       }

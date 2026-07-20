@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ArrowRight, Eye, EyeOff, LoaderCircle } from "lucide-react";
+import { getApiErrorMessage } from "@/lib/api-error";
 
 type Mode = "login" | "signup";
 
@@ -25,8 +26,8 @@ export function AuthForm({ mode }: { mode: Mode }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const result = (await response.json().catch(() => null)) as { detail?: string } | null;
-      if (!response.ok) throw new Error(result?.detail ?? "We could not complete that request.");
+      const result: unknown = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(getApiErrorMessage(result, "We could not complete that request."));
       router.push("/dashboard");
       router.refresh();
     } catch (caught) {
