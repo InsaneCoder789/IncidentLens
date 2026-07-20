@@ -10,7 +10,7 @@ export function PublicHeader() {
           <span className="text-lg font-semibold tracking-[-0.03em] text-bone">IncidentLens</span>
         </Link>
         <nav className="hidden items-center gap-9 text-sm text-bone/60 md:flex" aria-label="Public navigation">
-          <a href="#product" className="transition-colors hover:text-bone">Product</a>
+          <a href="#product" className="transition-colors hover:text-bone">Investigation</a>
           <a href="#method" className="transition-colors hover:text-bone">Method</a>
           <a href="#security" className="transition-colors hover:text-bone">Security</a>
         </nav>
