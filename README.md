@@ -376,6 +376,31 @@ make docker-down
 | `GITHUB_TOKEN`, `SENTRY_AUTH_TOKEN` | optional credentials for connected evidence sources |
 | `PROMETHEUS_URL`, `STATUSPAGE_URL` | optional operational source endpoints |
 
+Keep production credentials in the hosting provider's encrypted environment store. Do not place database URLs, Redis credentials, service tokens, or LLM keys in committed environment files.
+
+## Production Deployment
+
+IncidentLens AI is deployed as two independently scalable Vercel projects backed by managed PostgreSQL and Redis services.
+
+```mermaid
+flowchart LR
+    Browser["Browser"] --> Web["Next.js web application"]
+    Web -->|"Server-side authenticated proxy"| API["FastAPI service"]
+    API --> PostgreSQL["Managed PostgreSQL"]
+    API --> Redis["Managed Redis"]
+    Worker["Background worker"] --> Redis
+    Worker --> PostgreSQL
+```
+
+The web project uses `apps/web` as its root directory and the API project uses `apps/api`. Set `API_URL` and `NEXT_PUBLIC_API_URL` to the API deployment URL, and configure matching `BACKEND_API_TOKEN` and `API_TOKEN` values as sensitive server-side variables. The API accepts either `DATABASE_URL` or the Vercel Marketplace `POSTGRES_URL` alias.
+
+Apply database migrations before serving a new API release:
+
+```bash
+cd apps/api
+alembic upgrade head
+```
+
 ## API Workflows
 
 ### Incident management

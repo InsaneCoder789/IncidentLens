@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import SecretStr, model_validator
+from pydantic import AliasChoices, Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -10,7 +10,10 @@ class Settings(BaseSettings):
 
     app_name: str = "IncidentLens AI API"
     environment: Literal["development", "test", "production"] = "development"
-    database_url: str = "sqlite:///./incidentlens.db"
+    database_url: str = Field(
+        default="sqlite:///./incidentlens.db",
+        validation_alias=AliasChoices("DATABASE_URL", "POSTGRES_URL"),
+    )
     redis_url: str = "redis://localhost:6379/0"
     api_token: SecretStr | None = None
     cors_allowed_origins: str = "http://localhost:3000"
@@ -39,6 +42,15 @@ class Settings(BaseSettings):
     prompt_versioning_enabled: bool = True
     evidence_storage_dir: str = "storage/evidence"
     max_evidence_upload_bytes: int = 25 * 1024 * 1024
+
+    @field_validator("database_url")
+    @classmethod
+    def normalize_postgres_driver(cls, value: str) -> str:
+        if value.startswith("postgres://"):
+            return value.replace("postgres://", "postgresql+psycopg://", 1)
+        if value.startswith("postgresql://"):
+            return value.replace("postgresql://", "postgresql+psycopg://", 1)
+        return value
 
     @property
     def cors_origins(self) -> list[str]:

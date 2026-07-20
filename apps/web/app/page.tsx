@@ -92,7 +92,7 @@ export default function HomePage() {
             <div className="mt-20 grid border-y border-ink/25 lg:grid-cols-4">
               {method.map((item, index) => (
                 <article key={item.number} className="relative border-b border-ink/20 px-0 py-8 lg:border-b-0 lg:border-r lg:px-7 lg:last:border-r-0">
-                  <div className="flex items-center gap-3"><span className="font-mono text-sm text-signal">{item.number}</span><h3 className="font-display text-3xl font-semibold uppercase tracking-wide">{item.title}</h3></div>
+                  <div className="flex items-center gap-4"><span className="font-display text-3xl font-semibold leading-none text-[#087985]">{item.number}</span><h3 className="font-display text-3xl font-semibold uppercase tracking-wide">{item.title}</h3></div>
                   <p className="mt-4 max-w-[280px] text-sm leading-6 text-ink/60">{item.copy}</p>
                   {index < method.length - 1 ? <ArrowRight className="absolute right-5 top-9 hidden h-4 w-4 text-signal lg:block" /> : null}
                 </article>
@@ -204,20 +204,20 @@ export default function HomePage() {
         <section className="overflow-hidden bg-ink text-bone">
           <div className="editorial-chapter mx-auto max-w-[1800px] px-5 py-24 sm:px-8 lg:px-14 lg:py-36">
             <div className="chapter-marker"><span>05</span><span>Evaluation and learning</span></div>
-            <div className="grid gap-12 lg:grid-cols-[.72fr_1.28fr] lg:items-center">
+            <div className="grid gap-10 lg:grid-cols-[1.05fr_.75fr] lg:items-end">
               <div>
                 <p className="eyebrow">Resolution is not the end</p>
                 <h2 className="editorial-title">Every incident calibrates the next.</h2>
-                <p className="mt-8 text-lg leading-8 text-bone/58">Resolved outcomes become evaluation cases. Prompt versions, retrieval settings, model routes, cost, latency, and safety behavior can be compared before a change reaches production.</p>
-                <div className="mt-10 grid gap-px bg-white/15 sm:grid-cols-2">
-                  {evaluationMeasures.map(([title, copy]) => (
-                    <article key={title} className="bg-ink p-5"><Check className="h-4 w-4 text-emerald-400" /><h3 className="mt-4 font-display text-2xl font-semibold uppercase">{title}</h3><p className="mt-2 text-sm leading-6 text-bone/45">{copy}</p></article>
-                  ))}
-                </div>
               </div>
-              <div className="evaluation-visual">
-                <Image src="/visuals/evaluation-loop.png" alt="Circular calibration instrument evaluating incident outcomes" width={1672} height={941} className="h-full w-full object-cover" sizes="(max-width: 1024px) 100vw, 62vw" />
-              </div>
+              <p className="max-w-2xl border-t border-white/15 pt-5 text-lg leading-8 text-bone/58 lg:justify-self-end">Resolved outcomes become evaluation cases. Prompt versions, retrieval settings, model routes, cost, latency, and safety behavior can be compared before a change reaches production.</p>
+            </div>
+            <div className="evaluation-visual mt-16">
+              <Image src="/visuals/evaluation-loop.png" alt="Circular calibration instrument evaluating incident outcomes" width={1672} height={941} className="h-full w-full object-cover" sizes="(max-width: 1800px) 100vw, 1700px" />
+            </div>
+            <div className="evaluation-sequence">
+              {evaluationMeasures.map(([title, copy]) => (
+                <article key={title}><Check className="h-4 w-4 text-emerald-400" /><h3>{title}</h3><p>{copy}</p></article>
+              ))}
             </div>
           </div>
         </section>

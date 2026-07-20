@@ -87,7 +87,15 @@ body {
 }
 
 .chapter-marker::after { content: ""; height: 1px; flex: 1; background: rgb(235 233 223 / 0.14); }
-.chapter-marker > span:first-child { color: #3ad4e6; }
+.chapter-marker > span:first-child {
+  min-width: 3rem;
+  color: #3ad4e6;
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(1.75rem, 2.8vw, 2.5rem);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
 .chapter-marker-dark { color: rgb(7 11 13 / 0.5); }
 .chapter-marker-dark::after { background: rgb(7 11 13 / 0.18); }
 .chapter-marker-dark > span:first-child { color: #d7500b; }
@@ -162,7 +170,19 @@ body {
   transform: rotate(-2deg);
 }
 
-.evaluation-visual { min-height: 380px; overflow: hidden; border-left: 1px solid rgb(58 212 230 / 0.18); }
+.evaluation-visual {
+  aspect-ratio: 16 / 8;
+  min-height: 380px;
+  overflow: hidden;
+  border-block: 1px solid rgb(58 212 230 / 0.18);
+  background: #050809;
+}
+
+.evaluation-sequence { display: grid; border-bottom: 1px solid rgb(255 255 255 / 0.15); }
+.evaluation-sequence article { padding: 1.5rem 0; border-bottom: 1px solid rgb(255 255 255 / 0.1); }
+.evaluation-sequence article:last-child { border-bottom: 0; }
+.evaluation-sequence h3 { margin-top: 1rem; font-family: var(--font-display), sans-serif; font-size: 1.75rem; font-weight: 600; text-transform: uppercase; }
+.evaluation-sequence p { margin-top: 0.5rem; max-width: 19rem; font-size: 0.875rem; line-height: 1.5rem; color: rgb(235 233 223 / 0.45); }
 
 .public-footer {
   position: relative;
@@ -186,13 +206,17 @@ body {
   .agent-sequence article { min-height: 200px; padding: 1.75rem 1.25rem; border-right: 1px solid rgb(7 11 13 / 0.18); border-bottom: 0; }
   .agent-sequence article:first-child { padding-left: 0; }
   .agent-sequence article:last-child { border-right: 0; }
+  .evaluation-sequence { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .evaluation-sequence article { min-height: 190px; padding: 1.75rem 1.5rem; border-right: 1px solid rgb(255 255 255 / 0.12); border-bottom: 0; }
+  .evaluation-sequence article:first-child { padding-left: 0; }
+  .evaluation-sequence article:last-child { border-right: 0; }
 }
 
 @media (max-width: 767px) {
   .editorial-media { aspect-ratio: 4 / 5; }
   .editorial-media img { object-position: 58% center; }
   .media-caption { flex-direction: column; }
-  .evaluation-visual { min-height: 320px; border-left: 0; border-top: 1px solid rgb(58 212 230 / 0.18); }
+  .evaluation-visual { aspect-ratio: 4 / 5; min-height: 320px; }
   .evaluation-visual img { object-position: 52% center; }
 }
 
