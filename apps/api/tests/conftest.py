@@ -8,6 +8,7 @@ import pytest
 
 from app.db.session import engine
 from app.models import evidence as _evidence_models  # noqa: F401,E402
+from app.models import auth as _auth_models  # noqa: F401,E402
 from app.models import incident as _incident_models  # noqa: F401,E402
 from app.models import investigation as _investigation_models  # noqa: F401,E402
 from app.models import operations as _operations_models  # noqa: F401,E402

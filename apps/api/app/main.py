@@ -9,6 +9,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 
 from app.api.routes.evidence import router as evidence_router
+from app.api.routes.auth import router as auth_router
 from app.api.routes.evals import router as evals_router
 from app.api.routes.health import router as health_router
 from app.api.routes.incidents import router as incidents_router
@@ -80,6 +81,7 @@ app.add_middleware(OperationalHeadersMiddleware)
 app.include_router(health_router)
 protected = [Depends(require_api_token)]
 app.include_router(incidents_router, dependencies=protected)
+app.include_router(auth_router, dependencies=protected)
 app.include_router(evidence_router, dependencies=protected)
 app.include_router(evals_router, dependencies=protected)
 app.include_router(integrations_router, dependencies=protected)

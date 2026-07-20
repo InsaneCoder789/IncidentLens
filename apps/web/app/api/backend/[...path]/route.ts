@@ -7,6 +7,13 @@ async function proxy(request: NextRequest, context: { params: Promise<{ path: st
   if (!token) {
     return Response.json({ detail: "Backend authentication is not configured" }, { status: 503 });
   }
+  const sessionToken = request.cookies.get("incidentlens_session")?.value;
+  if (!sessionToken) return Response.json({ detail: "Operator session required" }, { status: 401 });
+  const sessionCheck = await fetch(`${API_URL}/api/auth/session`, {
+    headers: { authorization: `Bearer ${token}`, "x-incidentlens-session": sessionToken },
+    cache: "no-store",
+  });
+  if (!sessionCheck.ok) return Response.json({ detail: "Operator session is invalid or expired" }, { status: 401 });
 
   const { path } = await context.params;
   const target = new URL(`/${path.join("/")}`, API_URL);
