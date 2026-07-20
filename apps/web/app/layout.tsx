@@ -1,22 +1,23 @@
 import type { Metadata } from "next";
-import { Geist, JetBrains_Mono } from "next/font/google";
+import { Barlow_Condensed, DM_Sans, JetBrains_Mono } from "next/font/google";
 import "@/app/globals.css";
-import { AppShell } from "@/components/app-shell";
+import { RouteShell } from "@/components/route-shell";
 
-const geist = Geist({ subsets: ["latin"], variable: "--font-geist" });
+const dmSans = DM_Sans({ subsets: ["latin"], variable: "--font-sans" });
+const barlowCondensed = Barlow_Condensed({ subsets: ["latin"], variable: "--font-display", weight: ["500", "600", "700"] });
 const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
-  title: "IncidentLens AI",
-  description: "Multimodal AI SRE copilot for production incident intelligence",
-  icons: { icon: "/brand/incidentlens-favicon.svg" },
+  title: { default: "IncidentLens", template: "%s / IncidentLens" },
+  description: "Evidence-grounded incident intelligence for engineering teams.",
+  icons: { icon: "/brand/incidentlens-mark-v2.png" },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${geist.variable} ${jetbrainsMono.variable} dark`}>
+    <html lang="en" className={`${dmSans.variable} ${barlowCondensed.variable} ${jetbrainsMono.variable} dark`}>
       <body className="font-sans antialiased">
-        <AppShell>{children}</AppShell>
+        <RouteShell>{children}</RouteShell>
       </body>
     </html>
   );

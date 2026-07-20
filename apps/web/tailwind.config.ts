@@ -6,6 +6,11 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        ink: "#070b0d",
+        bone: "#ebe9df",
+        paper: "#e8e4d9",
+        signal: "#3ad4e6",
+        decision: "#ee6418",
         bg: "rgb(var(--background) / <alpha-value>)",
         panel: "rgb(var(--panel) / <alpha-value>)",
         panel2: "rgb(var(--panel-2) / <alpha-value>)",
@@ -22,8 +27,8 @@ const config: Config = {
         panel: "0 22px 60px rgba(2, 7, 12, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.035)",
       },
       fontFamily: {
-        display: ["Geist", "var(--font-geist)", "sans-serif"],
-        sans: ["Geist", "var(--font-geist)", "sans-serif"],
+        display: ["var(--font-display)", "sans-serif"],
+        sans: ["var(--font-sans)", "sans-serif"],
         mono: ["var(--font-mono)"],
       },
       keyframes: {
