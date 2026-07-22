@@ -17,7 +17,7 @@ def read_llmops_overview(db: Session = Depends(get_db)) -> LlmopsOverviewRead:
     latest_eval = db.scalar(select(EvalRun).order_by(EvalRun.created_at.desc()))
     prompts = list(db.scalars(select(PromptVersion).order_by(PromptVersion.created_at.desc()).limit(8)))
     integrations = list_integration_health()
-    healthy = sum(1 for item in integrations if item.status == "healthy")
+    healthy = sum(1 for item in integrations if item.status == "configured")
 
     return LlmopsOverviewRead(
         provider_configured=settings.llm_api_key is not None,

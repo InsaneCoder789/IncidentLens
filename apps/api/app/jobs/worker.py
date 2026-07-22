@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import redis
+from sqlalchemy import select
 
 from app.agents.orchestrator import run_investigation
 from app.core.config import get_settings
@@ -87,6 +88,40 @@ def run_worker() -> None:
         item = queue.brpop(settings.job_queue_name, timeout=5)
         if item:
             execute_job(item[1])
+
+
+def run_next_job() -> str | None:
+    """Run one queued job so a scheduled serverless invocation can drain Redis."""
+    settings = get_settings()
+    queue = redis.Redis.from_url(settings.redis_url, decode_responses=True)
+    db = SessionLocal()
+    try:
+        stale_before = datetime.now(UTC) - timedelta(minutes=10)
+        stale_jobs = list(
+            db.scalars(
+                select(Job).where(
+                    Job.status == "running",
+                    Job.started_at.is_not(None),
+                    Job.started_at < stale_before,
+                    Job.attempts < Job.max_attempts,
+                )
+            )
+        )
+        for job in stale_jobs:
+            job.status = "queued"
+            job.error_message = "Recovered after the job runner stopped responding"
+            db.add(job)
+            queue.lpush(settings.job_queue_name, job.id)
+        if stale_jobs:
+            db.commit()
+    finally:
+        db.close()
+
+    job_id = queue.rpop(settings.job_queue_name)
+    if not job_id:
+        return None
+    execute_job(job_id)
+    return job_id
 
 
 if __name__ == "__main__":

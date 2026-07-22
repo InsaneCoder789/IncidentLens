@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
@@ -8,6 +8,7 @@ from app.schemas.evidence import EvidenceProcessResponse
 from app.services.evidence_processing_service import process_evidence_item
 from app.services.evidence_service import delete_evidence
 from app.services.evidence_storage import resolve_evidence_storage_path
+from app.services.blob_storage import BlobStorageError, download_file
 
 router = APIRouter(prefix="/api", tags=["evidence"])
 
@@ -40,6 +41,16 @@ def read_evidence_file(evidence_id: int, db: Session = Depends(get_db)) -> FileR
     if not evidence:
         raise HTTPException(status_code=404, detail="Evidence not found")
     metadata = evidence.metadata_json or {}
+    storage_url = metadata.get("storage_url")
+    if storage_url:
+        try:
+            return Response(
+                content=download_file(str(storage_url)),
+                media_type=str(metadata.get("mime_type", "application/octet-stream")),
+                headers={"Content-Disposition": f'attachment; filename="{metadata.get("filename", "evidence")}"', "Cache-Control": "private, no-store"},
+            )
+        except BlobStorageError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
     storage_path = metadata.get("storage_path")
     if not storage_path:
         raise HTTPException(status_code=404, detail="Evidence has no uploaded file")

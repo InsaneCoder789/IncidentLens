@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     )
     redis_url: str = "redis://localhost:6379/0"
     api_token: SecretStr | None = None
+    cron_secret: SecretStr | None = None
+    blob_read_write_token: SecretStr | None = None
     cors_allowed_origins: str = "http://localhost:3000"
     llm_api_key: SecretStr | None = None
     llm_base_url: str = "https://api.openai.com/v1"
@@ -61,6 +63,10 @@ class Settings(BaseSettings):
         if self.environment == "production":
             if self.api_token is None or len(self.api_token.get_secret_value()) < 32:
                 raise ValueError("API_TOKEN must contain at least 32 characters in production")
+            if self.cron_secret is None or len(self.cron_secret.get_secret_value()) < 32:
+                raise ValueError("CRON_SECRET must contain at least 32 characters in production")
+            if self.blob_read_write_token is None:
+                raise ValueError("BLOB_READ_WRITE_TOKEN is required in production")
             if "*" in self.cors_origins:
                 raise ValueError("CORS_ALLOWED_ORIGINS cannot contain '*' in production")
             if self.database_url.startswith("sqlite"):

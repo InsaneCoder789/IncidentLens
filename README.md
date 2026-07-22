@@ -367,6 +367,8 @@ make docker-down
 | `NEXT_PUBLIC_API_URL` | browser-visible API base URL |
 | `ENVIRONMENT` | runtime environment name |
 | `API_TOKEN` | server-side bearer token required by protected FastAPI routes |
+| `CRON_SECRET` | Vercel Cron credential used by the scheduled job runner |
+| `BLOB_READ_WRITE_TOKEN` | private Vercel Blob credential for durable evidence files |
 | `LLM_API_KEY` | credential for the configured OpenAI-compatible model, vision, and transcription APIs |
 | `BACKEND_API_TOKEN` | matching server-only token used by the Next.js backend proxy |
 | `EVIDENCE_STORAGE_DIR` | local evidence file directory |
@@ -393,6 +395,8 @@ flowchart LR
 ```
 
 The web project uses `apps/web` as its root directory and the API project uses `apps/api`. Set `API_URL` and `NEXT_PUBLIC_API_URL` to the API deployment URL, and configure matching `BACKEND_API_TOKEN` and `API_TOKEN` values as sensitive server-side variables. The API accepts either `DATABASE_URL` or the Vercel Marketplace `POSTGRES_URL` alias.
+
+Production jobs are drained by the authenticated `/api/cron/worker` Vercel Cron route. The Docker worker remains available for local and dedicated deployments. Production evidence files are stored in a private Vercel Blob store and are streamed through authenticated API routes.
 
 Apply database migrations before serving a new API release:
 

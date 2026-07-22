@@ -23,7 +23,8 @@ from app.schemas.incident import IncidentCreate, IncidentRead, IncidentUpdate
 from app.schemas.investigation import AgentRunRead, IncidentReportRead, IncidentTraceRead, InvestigationStartResponse, ToolCallRead
 from app.services.evidence_processing_service import process_all_evidence_for_incident, process_evidence_item
 from app.services.evidence_service import list_evidence, create_evidence, list_incident_chunks
-from app.services.evidence_storage import evidence_storage_root
+from app.services.blob_storage import BlobStorageError
+from app.services.evidence_storage import evidence_storage_root, persist_evidence_file
 from app.services.multimodal_extraction_service import MultimodalExtractionService, infer_source_type
 from app.services.incident_service import (
     create_incident,
@@ -238,6 +239,25 @@ async def upload_incident_evidence(
     finally:
         await file.close()
 
+    mime_type = file.content_type or "application/octet-stream"
+    try:
+        blob = persist_evidence_file(absolute_path, pathname=relative_path.as_posix(), content_type=mime_type)
+    except BlobStorageError as exc:
+        absolute_path.unlink(missing_ok=True)
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    metadata = {
+        "filename": filename,
+        "mime_type": mime_type,
+        "file_size_bytes": size,
+        "storage_path": relative_path.as_posix(),
+        "extraction_status": "pending",
+        "upload_mode": "vercel_blob" if blob else "local_development_storage",
+    }
+    if blob:
+        metadata.update({"storage_url": blob["url"], "download_url": blob.get("downloadUrl", blob["url"]), "blob_pathname": blob["pathname"]})
+        absolute_path.unlink(missing_ok=True)
+
     evidence = create_evidence(
         db,
         incident_id,
@@ -245,14 +265,7 @@ async def upload_incident_evidence(
             source_type=inferred_source_type,
             title=title or Path(filename).stem.replace("-", " ").replace("_", " ").strip().title(),
             raw_content=description,
-            metadata_json={
-                "filename": filename,
-                "mime_type": file.content_type or "application/octet-stream",
-                "file_size_bytes": size,
-                "storage_path": relative_path.as_posix(),
-                "extraction_status": "pending",
-                "upload_mode": "local_development_storage",
-            },
+            metadata_json=metadata,
         ),
     )
 

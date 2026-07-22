@@ -33,7 +33,7 @@ class IntegrationHealthStatus:
 def _configuration() -> dict[str, tuple[str, bool, list[str]]]:
     settings = get_settings()
     return {
-        "github": ("GitHub", bool(settings.github_token and settings.github_repository), ["github_commit"]),
+        "github": ("GitHub", bool(settings.github_repository), ["github_commit"]),
         "sentry": ("Sentry", bool(settings.sentry_auth_token and settings.sentry_organization and settings.sentry_project), ["sentry_issue"]),
         "prometheus": ("Prometheus", bool(settings.prometheus_url), ["prometheus_metric"]),
         "statuspage": ("Statuspage", bool(settings.statuspage_url), ["statuspage"]),
@@ -42,12 +42,19 @@ def _configuration() -> dict[str, tuple[str, bool, list[str]]]:
 
 
 def list_integration_health() -> list[IntegrationHealthStatus]:
+    settings = get_settings()
     return [
         IntegrationHealthStatus(
             key=key,
             label=label,
             status="configured" if configured else "configuration_required",
-            detail="Credentials and endpoint are configured." if configured else "Configure this integration in the server environment.",
+            detail=(
+                "Repository configured; a token is optional for public repositories."
+                if key == "github" and configured and not settings.github_token
+                else "Credentials and endpoint are configured."
+                if configured
+                else "Configure this integration in the server environment."
+            ),
             source_types=source_types,
         )
         for key, (label, configured, source_types) in _configuration().items()
@@ -56,11 +63,11 @@ def list_integration_health() -> list[IntegrationHealthStatus]:
 
 def _github_records(incident: Incident) -> list[IntegrationEvidenceRecord]:
     settings = get_settings()
-    if not settings.github_token or not settings.github_repository:
-        raise RuntimeError("GITHUB_TOKEN and GITHUB_REPOSITORY are required")
+    if not settings.github_repository:
+        raise RuntimeError("GITHUB_REPOSITORY is required")
     response = httpx.get(
         f"https://api.github.com/repos/{settings.github_repository}/commits",
-        headers={"Authorization": f"Bearer {settings.github_token.get_secret_value()}", "Accept": "application/vnd.github+json"},
+        headers={"Accept": "application/vnd.github+json", **({"Authorization": f"Bearer {settings.github_token.get_secret_value()}"} if settings.github_token else {})},
         params={"per_page": 30},
         timeout=30,
     )

@@ -5,6 +5,8 @@ import redis
 
 from app.core.config import get_settings
 from app.db.session import get_db
+from app.integrations.service import list_integration_health
+from app.services.blob_storage import blob_storage_enabled
 
 router = APIRouter(prefix="/api", tags=["health"])
 
@@ -36,4 +38,7 @@ def health(response: Response, db: Session = Depends(get_db)) -> dict:
         "database": db_status,
         "redis": redis_status,
         "llm_provider": "configured" if settings.llm_api_key is not None else "not_configured",
+        "job_runner": "configured" if settings.cron_secret is not None else "not_configured",
+        "evidence_storage": "vercel_blob" if blob_storage_enabled() else "local_filesystem",
+        "integrations": {item.key: item.status for item in list_integration_health()},
     }

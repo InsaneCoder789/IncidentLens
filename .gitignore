@@ -25,3 +25,4 @@ apps/web/test-results/
 apps/api/storage/evidence/*
 !apps/api/storage/evidence/.gitkeep
 .vercel
+.env*.local

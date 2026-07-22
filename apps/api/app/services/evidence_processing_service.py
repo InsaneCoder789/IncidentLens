@@ -9,7 +9,7 @@ from app.models.evidence import EvidenceChunk, EvidenceItem
 from app.rag.chunker import chunk_evidence, citation_id_for_position
 from app.rag.embeddings import get_embedding_provider
 from app.services.evidence_normalizer import normalize_evidence_content
-from app.services.evidence_storage import resolve_evidence_storage_path
+from app.services.evidence_storage import materialize_evidence_file
 from app.services.multimodal_extraction_service import MultimodalExtractionService
 
 
@@ -54,12 +54,12 @@ def process_evidence_item(db: Session, evidence_item: EvidenceItem) -> EvidenceP
             db.add(evidence_item)
             db.flush()
 
-            absolute_path = resolve_evidence_storage_path(str(storage_path))
-            extraction = MultimodalExtractionService().extract(
-                path=absolute_path,
-                mime_type=str(metadata.get("mime_type", "application/octet-stream")),
-                description=evidence_item.raw_content,
-            )
+            with materialize_evidence_file(metadata) as absolute_path:
+                extraction = MultimodalExtractionService().extract(
+                    path=absolute_path,
+                    mime_type=str(metadata.get("mime_type", "application/octet-stream")),
+                    description=evidence_item.raw_content,
+                )
             metadata.update(extraction.metadata)
             metadata.update(
                 {
