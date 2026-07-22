@@ -1,6 +1,7 @@
 import asyncio
 import re
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
@@ -217,14 +218,17 @@ async def upload_incident_evidence(
 
     relative_dir = Path(settings.evidence_storage_dir) / str(incident_id)
     absolute_dir = evidence_storage_root() / str(incident_id)
-    absolute_dir.mkdir(parents=True, exist_ok=True)
     stored_filename = f"{uuid4().hex}-{filename}"
     relative_path = relative_dir / stored_filename
     absolute_path = absolute_dir / stored_filename
 
     size = 0
+    temporary_path: Path | None = None
     try:
-        with absolute_path.open("wb") as destination:
+        # Serverless filesystems are read-only outside /tmp. Stream there first,
+        # then either upload to Blob or move into the local development store.
+        with NamedTemporaryFile(prefix="incidentlens-upload-", suffix=extension, delete=False) as destination:
+            temporary_path = Path(destination.name)
             while chunk := await file.read(1024 * 1024):
                 size += len(chunk)
                 if size > settings.max_evidence_upload_bytes:
@@ -234,17 +238,30 @@ async def upload_incident_evidence(
                     )
                 destination.write(chunk)
     except Exception:
-        absolute_path.unlink(missing_ok=True)
+        if temporary_path:
+            temporary_path.unlink(missing_ok=True)
         raise
     finally:
         await file.close()
 
     mime_type = file.content_type or "application/octet-stream"
     try:
-        blob = persist_evidence_file(absolute_path, pathname=relative_path.as_posix(), content_type=mime_type)
+        if temporary_path is None:
+            raise RuntimeError("Evidence upload did not create a temporary file")
+        blob = persist_evidence_file(temporary_path, pathname=relative_path.as_posix(), content_type=mime_type)
+        if blob:
+            temporary_path.unlink(missing_ok=True)
+        else:
+            absolute_dir.mkdir(parents=True, exist_ok=True)
+            temporary_path.replace(absolute_path)
     except BlobStorageError as exc:
-        absolute_path.unlink(missing_ok=True)
+        if temporary_path:
+            temporary_path.unlink(missing_ok=True)
         raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except Exception:
+        if temporary_path:
+            temporary_path.unlink(missing_ok=True)
+        raise
 
     metadata = {
         "filename": filename,
@@ -256,7 +273,6 @@ async def upload_incident_evidence(
     }
     if blob:
         metadata.update({"storage_url": blob["url"], "download_url": blob.get("downloadUrl", blob["url"]), "blob_pathname": blob["pathname"]})
-        absolute_path.unlink(missing_ok=True)
 
     evidence = create_evidence(
         db,

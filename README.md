@@ -396,7 +396,7 @@ flowchart LR
 
 The web project uses `apps/web` as its root directory and the API project uses `apps/api`. Set `API_URL` and `NEXT_PUBLIC_API_URL` to the API deployment URL, and configure matching `BACKEND_API_TOKEN` and `API_TOKEN` values as sensitive server-side variables. The API accepts either `DATABASE_URL` or the Vercel Marketplace `POSTGRES_URL` alias.
 
-Production jobs are drained by the authenticated `/api/cron/worker` Vercel Cron route. The Docker worker remains available for local and dedicated deployments. Production evidence files are stored in a private Vercel Blob store and are streamed through authenticated API routes.
+Production jobs are drained every ten minutes by the authenticated `/api/cron/worker` GitHub Actions workflow. The Docker worker remains available for local and dedicated deployments. Production evidence files are stored in a private Vercel Blob store and are streamed through authenticated API routes.
 
 Apply database migrations before serving a new API release:
 

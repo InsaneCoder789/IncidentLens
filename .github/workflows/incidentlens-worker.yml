@@ -1,0 +1,23 @@
+name: IncidentLens job runner
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  drain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Drain one durable job
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          API_URL: https://incidentlens-api.vercel.app
+        run: |
+          set -euo pipefail
+          curl --fail-with-body --silent --show-error --max-time 280 \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            "${API_URL}/api/cron/worker"
