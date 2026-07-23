@@ -52,7 +52,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
         {mode === "signup" ? <AuthInput label="Team name" name="team_name" autoComplete="organization" placeholder="Engineering Operations" minLength={2} /> : null}
       </div>
       {error ? <div role="alert" className="mt-5 border-l-2 border-decision bg-decision/10 px-4 py-3 text-sm text-[#9a3510]">{error}</div> : null}
-      <button type="submit" disabled={submitting} className="mt-6 flex min-h-14 w-full items-center justify-between bg-decision px-6 font-mono text-xs font-semibold uppercase tracking-[0.12em] text-ink transition-colors hover:bg-[#ff7a2c] disabled:cursor-wait disabled:opacity-70">
+      <button type="submit" disabled={submitting} className="auth-submit mt-6 flex min-h-14 w-full items-center justify-between bg-decision px-6 font-mono text-xs font-semibold uppercase tracking-[0.12em] text-ink transition-colors hover:bg-[#ff7a2c] disabled:cursor-wait disabled:opacity-70">
         <span>{submitting ? "Securing session" : mode === "signup" ? "Create workspace" : "Enter workspace"}</span>{submitting ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
       </button>
       <div className="mt-5 text-sm text-ink/65">{mode === "signup" ? "Already have an account?" : "New to IncidentLens?"} <Link href={mode === "signup" ? "/login" : "/signup"} className="ml-1 border-b border-decision text-ink">{mode === "signup" ? "Sign in" : "Create an account"}</Link></div>

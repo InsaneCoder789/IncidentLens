@@ -226,17 +226,23 @@ body {
   min-height: 52px;
   border: 1px solid rgb(7 11 13 / 0.28);
   background: rgb(255 255 255 / 0.12);
-  padding: 0 0.9rem;
+  padding: 0 1rem;
   color: #070b0d;
   outline: none;
+  clip-path: polygon(9px 0, 100% 0, calc(100% - 9px) 100%, 0 100%);
   transition: border-color 200ms ease, box-shadow 200ms ease;
 }
 .auth-field:focus { border-color: #3aa7b3; box-shadow: 0 0 0 3px rgb(58 212 230 / 0.15); }
 .auth-field::placeholder { color: rgb(7 11 13 / 0.35); }
+.auth-submit {
+  clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
+  padding-left: 1.75rem;
+  padding-right: 1.75rem;
+}
 
 @media (min-width: 1024px) {
-  .auth-paper-login { clip-path: polygon(11% 0, 100% 0, 100% 100%, 0 100%); padding-left: 10%; }
-  .auth-paper-signup { clip-path: polygon(0 0, 100% 0, 89% 100%, 0 100%); padding-right: 10%; }
+  .auth-paper-login { clip-path: polygon(6% 0, 100% 0, 100% 100%, 0 100%); padding-left: 8%; }
+  .auth-paper-signup { clip-path: polygon(0 0, 100% 0, 94% 100%, 0 100%); padding-right: 8%; }
 }
 
 * { box-sizing: border-box; border-color: rgb(var(--line) / 0.12); }
