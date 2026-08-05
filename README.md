@@ -19,6 +19,20 @@ IncidentLens turns fragmented operational signals into a grounded investigation 
 
 This is an incident workspace rather than a chatbot interface. The primary UX is designed for triage, evidence inspection, reasoning review, and controlled action.
 
+## Synthetic RAG Dataset Factory
+
+The repository includes a deterministic generator for large-scale RAG evaluation and development data. It creates balanced incident scenarios across every supported incident type, with realistic evidence records, distractors, expected citations, root-cause labels, missing-evidence labels, and safety labels.
+
+Generate the default 100,000-case dataset:
+
+```bash
+./.venv/bin/python evals/generate_synthetic_dataset.py
+```
+
+Output is written to `evals/generated/incident_cases.jsonl.gz` with a matching manifest. Generated artifacts are intentionally ignored by Git; regenerate them from the versioned script and seed instead of committing a large opaque file.
+
+The dataset is suitable for retrieval benchmarks, grounding regression tests, prompt evaluation, and synthetic development fixtures. It does not train or fine-tune the underlying LLM by itself, and real incident examples are still required before claiming production quality.
+
 ## Delivery Status
 
 | Track | Area | Completed implementation |
