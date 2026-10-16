@@ -38,9 +38,9 @@ def read_llmops_overview(db: Session = Depends(get_db)) -> LlmopsOverviewRead:
             {
                 "dataset_name": latest_eval.dataset_name,
                 "root_cause_accuracy": latest_eval.root_cause_accuracy,
-                "citation_coverage": latest_eval.citation_coverage,
-                "avg_latency_ms": latest_eval.avg_latency_ms,
-                "avg_cost_usd": latest_eval.avg_cost_usd,
+                "citation_coverage": latest_eval.citation_coverage if latest_eval.summary_json.get("evaluation_version") == 2 else None,
+                "avg_latency_ms": latest_eval.avg_latency_ms if latest_eval.summary_json.get("evaluation_version") == 2 else None,
+                "avg_cost_usd": latest_eval.avg_cost_usd if latest_eval.summary_json.get("evaluation_version") == 2 else None,
             }
             if latest_eval
             else {}

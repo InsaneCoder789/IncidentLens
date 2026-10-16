@@ -4,7 +4,7 @@
 
 IncidentLens is an incident intelligence platform for Site Reliability Engineering teams. It combines multimodal evidence ingestion, evidence-grounded investigation, evaluation, and LLMOps visibility in one approval-aware workflow.
 
-The Tracks A–G production scope is implemented. Runtime data is persisted, long-running work uses a durable queue, providers are credential-driven, and unavailable dependencies fail visibly instead of returning invented results. Test-only fakes and the versioned evaluation dataset never enter runtime workflows.
+The Tracks A–G workflow is implemented; that is not a production certification. Runtime data is persisted, long-running work uses a durable queue, providers are credential-driven, and unavailable dependencies fail visibly instead of returning invented results. Test-only fakes and the versioned evaluation dataset are separate from runtime incident creation.
 
 ## Product Overview
 
@@ -15,7 +15,7 @@ IncidentLens turns fragmented operational signals into a grounded investigation 
 - orchestrates specialized agents for intake, retrieval, tool execution, root-cause analysis, remediation, and evaluation
 - persists reports, agent runs, tool calls, latency, token use, and estimated cost
 - keeps rollback, hotfix, feature-flag, and production mutation steps behind human approval
-- measures retrieval quality, grounding, safety, latency, and regression risk
+- measures retrieval and structured-reference coverage; preserves model flags for review and distinguishes unavailable measurements
 
 This is an incident workspace rather than a chatbot interface. The primary UX is designed for triage, evidence inspection, reasoning review, and controlled action.
 
@@ -270,16 +270,20 @@ Uploaded files are stored under `apps/api/storage/evidence/` during local develo
 
 ## Evaluation Methodology
 
-The local evaluation harness measures:
+The local evaluation harness now records:
 
 - Recall@5 and Recall@10
 - mean reciprocal rank
-- root-cause accuracy
-- citation coverage
-- unsupported claim rate
-- unsafe action rate
-- average latency
-- average estimated cost
+- root-cause match on a synthetic fixture, not population accuracy
+- structured citation coverage and unknown reference IDs
+- completed-agent-step latency and estimated cost, or unavailable when unmeasured
+
+Unsupported-claim and unsafe-action rates remain unavailable until independent
+claim/action labels and a policy evaluator exist. They are not measured by root-cause
+substrings or action-word searches. See [evaluation methodology and migration](docs/eval-design.md).
+The 16 October 2026 isolated API suite passed 23 tests, including deliberately
+failing retrieval/structured-data cases and nullable-metric migration checks.
+Web type checking and browser rendering of the latest changes remain open gates.
 
 The versioned evaluation dataset is located at `evals/datasets/payment_api_incident.json`. It is used only by the evaluation runner; runtime incidents are created through the UI or authenticated API. Evaluation runs are persisted and displayed in `/evals`.
 

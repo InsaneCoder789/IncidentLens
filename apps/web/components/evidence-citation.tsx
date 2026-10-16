@@ -490,14 +490,14 @@ export function EvalMetricCard({ label, value, sublabel, tone = "accent" }: Eval
   );
 }
 
-export function EvalHistoryChart({ labels, accuracy, latency }: { labels: string[]; accuracy: number[]; latency: number[] }) {
-  const maxValue = Math.max(1, ...accuracy, ...latency);
+export function EvalHistoryChart({ labels, accuracy, latency }: { labels: string[]; accuracy: number[]; latency: (number | null)[] }) {
+  const maxLatency = Math.max(1, ...latency.filter((value): value is number => value !== null));
   return (
     <div className="rounded-xl border border-line bg-panel px-4 py-4">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <div className="text-sm font-medium text-white">Prompt Version Comparison</div>
-          <div className="mt-1 text-xs text-slate-500">Accuracy and latency regression view across recent prompt releases.</div>
+          <div className="text-sm font-medium text-white">Fixture Run Comparison</div>
+          <div className="mt-1 text-xs text-slate-500">Fixture match (%) and completed-step latency (ms) use separate scales.</div>
         </div>
         <div className="flex gap-3 text-[10px] font-mono uppercase tracking-[0.08em] text-slate-500">
           <span className="text-[#56B8C7]">accuracy</span>
@@ -508,8 +508,8 @@ export function EvalHistoryChart({ labels, accuracy, latency }: { labels: string
         {labels.map((label, index) => (
           <div key={label} className="space-y-2">
             <div className="flex h-40 items-end justify-center gap-1 rounded-lg border border-line bg-[#10131b] px-2 py-3">
-              <div className="w-3 rounded-sm bg-[#56B8C7]" style={{ height: `${(accuracy[index] / maxValue) * 100}%` }} />
-              <div className="w-3 rounded-sm bg-[#E7A75D]" style={{ height: `${(latency[index] / maxValue) * 100}%` }} />
+              <div className="w-3 rounded-sm bg-[#56B8C7]" style={{ height: `${accuracy[index]}%` }} />
+              {latency[index] === null ? <span className="text-[9px] text-slate-500">N/A</span> : <div className="w-3 rounded-sm bg-[#E7A75D]" title={`${latency[index]}ms`} style={{ height: `${((latency[index] ?? 0) / maxLatency) * 100}%` }} />}
             </div>
             <div className="text-center font-mono text-[10px] text-slate-500">{label}</div>
           </div>
@@ -534,7 +534,7 @@ export function FailedCasesTable({ failures }: { failures: EvalFailure[] }) {
         </thead>
         <tbody className="divide-y divide-line bg-panel">
           {failures.map((failure) => (
-            <tr key={failure.incidentId}>
+            <tr key={`${failure.incidentId}-${failure.reason}`}>
               <td className="px-3 py-3 font-mono text-slate-300">{failure.incidentId}</td>
               <td className="px-3 py-3 text-slate-400">{failure.timestamp}</td>
               <td className="px-3 py-3 text-slate-200">{failure.reason}</td>

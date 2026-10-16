@@ -19,5 +19,5 @@ class LlmopsOverviewRead(BaseModel):
     generation_temperature: float
     generation_max_tokens: int
     integration_status_summary: dict[str, int] = Field(default_factory=dict)
-    latest_eval_summary: dict[str, float | str] = Field(default_factory=dict)
+    latest_eval_summary: dict[str, float | str | None] = Field(default_factory=dict)
     prompt_versions: list[PromptVersionSummary] = Field(default_factory=list)

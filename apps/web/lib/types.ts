@@ -308,13 +308,13 @@ export type EvalRun = {
   dataset_name: string;
   recall_at_5: number;
   recall_at_10: number;
-  mrr: number;
+  mrr: number | null;
   root_cause_accuracy: number;
-  citation_coverage: number;
-  unsupported_claim_rate: number;
-  unsafe_action_rate: number;
-  avg_latency_ms: number;
-  avg_cost_usd: number;
+  citation_coverage: number | null;
+  unsupported_claim_rate: number | null;
+  unsafe_action_rate: number | null;
+  avg_latency_ms: number | null;
+  avg_cost_usd: number | null;
   summary_json: Record<string, unknown>;
   failed_cases_json: EvalFailure[];
   created_at: string;
@@ -341,7 +341,7 @@ export type LlmopsOverview = {
   generation_temperature: number;
   generation_max_tokens: number;
   integration_status_summary: Record<string, number>;
-  latest_eval_summary: Record<string, string | number>;
+  latest_eval_summary: Record<string, string | number | null>;
   prompt_versions: PromptVersionSummary[];
 };
 

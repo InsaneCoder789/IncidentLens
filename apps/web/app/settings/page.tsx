@@ -35,11 +35,11 @@ export default async function SettingsPage() {
         <aside className="space-y-5 xl:sticky xl:top-[92px] xl:self-start">
           <Card><CardHeader><SectionHeading eyebrow="Guardrails" title="Budget and safety" /></CardHeader><CardContent>
             <div className="label-caps text-muted">Monthly cost limit</div><div className="mt-2 font-mono text-3xl tracking-[-0.05em] text-text">${settings.monthly_cost_limit_usd.toFixed(2)}</div>
-            <div className="mt-2 flex justify-between font-mono text-[9px] text-muted"><span>Recorded average</span><span>{latestEval.avg_cost_usd ? `$${Number(latestEval.avg_cost_usd).toFixed(2)} / eval run` : "No usage recorded"}</span></div>
+            <div className="mt-2 flex justify-between font-mono text-[9px] text-muted"><span>Recorded average</span><span>{typeof latestEval.avg_cost_usd === "number" ? `${latestEval.avg_cost_usd.toFixed(4)} / completed step` : "Unavailable"}</span></div>
             <div className="mt-5 rounded-xl border border-warning/20 bg-warning/5 p-3 text-xs leading-5 text-warning">Rollback, hotfix, and production mutation steps require human approval before execution.</div>
           </CardContent></Card>
           <Card><CardHeader><SectionHeading eyebrow="Engine" title="Runtime health" /></CardHeader><CardContent className="divide-y divide-line/8">
-            <div className="flex items-center justify-between py-3 text-xs"><span className="flex items-center gap-2 text-muted"><Gauge className="h-3.5 w-3.5" strokeWidth={1.5} />Average latency</span><span className="font-mono text-text">{latestEval.avg_latency_ms ? `${Math.round(Number(latestEval.avg_latency_ms))}ms` : "No run"}</span></div>
+            <div className="flex items-center justify-between py-3 text-xs"><span className="flex items-center gap-2 text-muted"><Gauge className="h-3.5 w-3.5" strokeWidth={1.5} />Average latency</span><span className="font-mono text-text">{typeof latestEval.avg_latency_ms === "number" ? `${Math.round(latestEval.avg_latency_ms)}ms` : "Unavailable"}</span></div>
             <div className="flex items-center justify-between py-3 text-xs"><span className="flex items-center gap-2 text-muted"><ShieldCheck className="h-3.5 w-3.5" strokeWidth={1.5} />Provider</span><span className="font-mono text-text">{overview.provider_configured ? "Configured" : "Required"}</span></div>
             <div className="flex items-center justify-between py-3 text-xs"><span className="text-muted">Prompt versions</span><span className="font-mono text-text">{overview?.prompt_versions.length ?? 0}</span></div>
           </CardContent></Card>
